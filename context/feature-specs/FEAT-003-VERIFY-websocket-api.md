@@ -11,28 +11,28 @@ pytest tests/test_websocket.py -v
 ```
 
 ### Required Test Case Assertions
-- [ ] `test_health_endpoint_returns_ok`: PASS
-- [ ] `test_ws_connection_emits_session_created`: PASS
-- [ ] `test_ws_user_message_streams_tokens_and_end`: PASS
-- [ ] `test_ws_malformed_json_emits_error_frame`: PASS
-- [ ] `test_ws_reset_session_emits_session_reset`: PASS
+- [x] `test_health_endpoint_returns_ok`: PASS
+- [x] `test_ws_connection_emits_session_created`: PASS
+- [x] `test_ws_user_message_streams_tokens_and_end`: PASS
+- [x] `test_ws_malformed_json_emits_error_frame`: PASS
+- [x] `test_ws_reset_session_emits_session_reset`: PASS
 
 ---
 
 ## 2. Acceptance Criteria Individual Re-Check
-- [ ] AC-1: `/ws/chat` accepts connections and immediately returns `session_created`: **PASS/FAIL**
-- [ ] AC-2: `user_message` results in sequential `token` frames ending with `stream_end`: **PASS/FAIL**
-- [ ] AC-3: Invalid JSON emits structured error frame without dropping socket: **PASS/FAIL**
-- [ ] AC-4: `reset_session` clears state and returns `session_reset`: **PASS/FAIL**
-- [ ] AC-5: 5 concurrent connections run without cross-talk or blocking: **PASS/FAIL**
+- [x] AC-1: `/ws/chat` accepts connections and immediately returns `session_created`: **PASS**
+- [x] AC-2: `user_message` results in sequential `token` frames ending with `stream_end`: **PASS**
+- [x] AC-3: Invalid JSON emits structured error frame without dropping socket: **PASS**
+- [x] AC-4: `reset_session` clears state and returns `session_reset`: **PASS**
+- [x] AC-5: 5 concurrent connections run without cross-talk or blocking: **PASS**
 
 ---
 
 ## 3. Definition of Done Compliance
-- [ ] All integration tests pass 100%.
-- [ ] Server starts cleanly with `uvicorn backend.api.main:app`.
-- [ ] Zero unhandled exception tracebacks in server logs.
-- [ ] Test report generated and committed in `feature-test-reports/FEAT-003-test-report.md`.
+- [x] All integration tests pass 100%.
+- [x] Server starts cleanly with `uvicorn backend.api.main:app`.
+- [x] Zero unhandled exception tracebacks in server logs.
+- [x] Test report generated and committed in `feature-test-reports/FEAT-003-test-report.md`.
 
 ---
 

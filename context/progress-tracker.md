@@ -2,14 +2,14 @@
 
 ## Current Phase
 
-- **Phase III (Conversation Manager & Memory)**: Completed. `FEAT-002-BE` and `FEAT-002-VERIFY` 100% verified (13/13 unit tests passed, SQA report filed).
-- **Next Phase**: Implementation of `FEAT-003-BE` (FastAPI WebSocket Streaming Endpoint).
+- **Phase IV (FastAPI WebSocket Streaming API)**: Completed. `FEAT-003-BE` and `FEAT-003-VERIFY` 100% verified (13/13 integration tests passed, 39/39 total project tests passed, SQA report filed).
+- **Next Phase**: Implementation of `FEAT-004-FE` (Web Chat Interface & Real-Time Stream Renderer).
 
 ---
 
 ## Current Goal
 
-- Implement and verify the FastAPI WebSocket streaming endpoint (`FEAT-003-BE` and `FEAT-003-VERIFY`).
+- Implement and verify the web chat frontend interface (`FEAT-004-FE` and `FEAT-004-VERIFY`).
 
 ---
 
@@ -21,7 +21,7 @@
 | **-** | Context & Feature Specs Definition            | **Completed** | `context/` & `context/feature-specs/`            |
 | **II**| Local LLM Setup & CPU Engine (`FEAT-001`)     | **Completed** | `FEAT-001-BE` + `FEAT-001-VERIFY`: 13/13 tests passed, SQA approved |
 | **III**| Conversation Manager & Memory (`FEAT-002`)   | **Completed** | `FEAT-002-BE` + `FEAT-002-VERIFY`: 13/13 tests passed, SQA approved |
-| **IV**| FastAPI WebSocket Streaming API (`FEAT-003`)  | Not Started   | `/ws/chat` JSON streaming endpoint               |
+| **IV**| FastAPI WebSocket Streaming API (`FEAT-003`)  | **Completed** | `FEAT-003-BE` + `FEAT-003-VERIFY`: 13/13 tests passed, SQA approved |
 | **V** | Web Chat Interface (`FEAT-004`)               | Not Started   | Streaming UI, session reset, history view        |
 | **VI**| SQA Tests, Benchmarks & Reports (`FEAT-005`)  | Not Started   | TTFT, tokens/sec, adversarial test reports       |
 
@@ -67,7 +67,14 @@
   - All 5 Acceptance Criteria (AC-1 through AC-5) verified and signed off.
   - SQA verification test report generated and committed in `feature-test-reports/FEAT-002-test-report.md`.
   - Definition of Done requirements fulfilled with zero failing tests and strict type checking clean.
-  - Ready for transition to Phase IV (`FEAT-003-BE`).
-
-
-
+- `FEAT-003-BE` (FastAPI WebSocket Streaming API) implemented and verified:
+  - Created `backend/api/routes.py` with `GET /api/health` returning status, model name, and engine readiness probe.
+  - Created `backend/api/websocket.py` with asynchronous `/ws/chat` endpoint supporting session auto-generation, bidirectional JSON envelope protocol, word-by-word LLM token streaming, heartbeat `ping`/`pong`, session reset, and resilient error recovery without socket termination.
+  - Created `backend/api/main.py` application factory with CORS middleware, lifespan startup model warmup, and shutdown cleanup.
+  - Created comprehensive integration test suite in `tests/test_websocket.py`: 13/13 integration tests passing (100%).
+  - Full project test suite running clean at 39/39 passing tests with zero static typing errors under `mypy` across 18 source files.
+- `FEAT-003-VERIFY` executed and 100% completed:
+  - All 5 Acceptance Criteria (AC-1 through AC-5) verified and signed off.
+  - SQA verification test report generated and committed in `feature-test-reports/FEAT-003-test-report.md`.
+  - Definition of Done requirements fulfilled with zero failing tests, clean server launch, and strict type checking clean.
+  - Ready for transition to Phase V (`FEAT-004-FE`).
