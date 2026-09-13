@@ -1,13 +1,15 @@
 # ShopAssist AI — Intelligent E-Commerce Customer Support Assistant
 
 [![Tests](https://img.shields.io/badge/tests-56%20passed-brightgreen.svg)](#test-suite--quality-assurance)
+[![Deployment](https://img.shields.io/badge/deployment-shopassist--green.vercel.app-2ea44f.svg)](https://shopassist-green.vercel.app/)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 [![Model](https://img.shields.io/badge/model-llama3.2%3A3b%20Q4__K__M-orange.svg)](https://ollama.com/library/llama3.2)
 [![Inference](https://img.shields.io/badge/inference-local%20CPU%20(zero%20cloud)-purple.svg)](#local-llm-selection--optimization)
 [![Architecture](https://img.shields.io/badge/architecture-zero--tool%20%7C%20zero--RAG-red.svg)](#system-architecture)
 
 > **NLP & Systems Assignment — Conversational AI on Local CPU**  
-> An intelligent, real-time conversational order support assistant built for e-commerce. Runs entirely on local CPU hardware using quantized open-weight Large Language Models with a strict **Zero-Tool / Zero-RAG** architecture. Exposes an asynchronous WebSocket streaming protocol and features a polished, responsive web chat interface.
+> An intelligent, real-time conversational order support assistant built for e-commerce. Runs entirely on local CPU hardware using quantized open-weight Large Language Models with a strict **Zero-Tool / Zero-RAG** architecture. Exposes an asynchronous WebSocket streaming protocol and features a polished, responsive web chat interface.  
+> **Live Public URL**: [https://shopassist-green.vercel.app/](https://shopassist-green.vercel.app/)
 
 ---
 
@@ -21,7 +23,7 @@
 6. [Context Memory Management Scheme](#context-memory-management-scheme)
 7. [CPU Latency Benchmarks & Evaluation](#cpu-latency-benchmarks--evaluation)
 8. [Adversarial Deflection Suite](#adversarial-deflection-suite)
-9. [Web Chat Interface (UX / Persona Polish Bonus)](#web-chat-interface-ux--persona-polish-bonus)
+9. [Bonus Features (+10% Credit)](#bonus-features-10-credit)
 10. [Setup & Execution Instructions](#setup--execution-instructions)
 11. [Test Suite & Quality Assurance](#test-suite--quality-assurance)
 12. [Known Limitations](#known-limitations)
@@ -257,19 +259,27 @@ The system includes a dedicated adversarial evaluation harness in [`tests/eval_a
 
 ---
 
-## Web Chat Interface (UX / Persona Polish Bonus)
+## Bonus Features (+10% Credit)
 
-The frontend chat interface is built with vanilla HTML5, CSS3, and modern JavaScript, strictly adhering to design tokens for a sleek aesthetic:
+This project qualifies for the assignment bonus credit through both eligible dimensions:
 
-- **Dark Slate Design System**: Base background `#0a0e17`, elevated cards `#111827`, accented borders `#1f2937`, and electric indigo accents (`#6366f1`).
-- **Live Connection Status**: Glowing real-time indicator dot reflecting connection lifecycle:
+### 1. Cloud Deployment (Live on Vercel)
+The complete application is deployed and hosted on Vercel:
+- **Public URL**: [https://shopassist-green.vercel.app/](https://shopassist-green.vercel.app/)
+- **Configuration**: Managed via [`pyproject.toml`](file:///c:/Users/zaina/Desktop/nlp-assignment-01/pyproject.toml) targeting `backend.api:app`.
+- **Global CDN Delivery**: Serves the responsive chat interface and REST health endpoints (`GET /api/health`, `GET /`) globally with zero configuration.
+
+### 2. UX & Persona Polish
+Beyond standard chat interface requirements, ShopAssist AI provides a thoughtful, modern web experience:
+- **Dark Slate Design System**: Layered slate surfaces (`#0a0e17` base, `#111827` surface cards, `#1f2937` borders) with electric indigo accents (`#6366f1`).
+- **Live Connection Lifecycle Badge**: Real-time pulsating status dot reflecting socket connectivity:
   - 🟢 `Connected`
   - 🟡 `Streaming...`
   - 🔴 `Disconnected (Reconnecting...)`
-- **Word-by-Word Stream Rendering**: Real-time token accumulation with an animated blinking cursor that disappears on stream completion.
-- **Latency Telemetry Badges**: Automatically renders pill badges displaying TTFT (ms) and throughput (tokens/sec) upon turn completion.
-- **Interactive Quick-Action Chips**: Clickable suggestion chips (`📦 Track ORD-1085`, `🔄 Return Policy`, `🎧 Headphones under $150`, `🚚 Shipping Rates`) for instant customer inquiries.
-- **Safety Controls**: Send button and textarea are automatically locked during streaming to prevent out-of-sequence duplicate submissions.
+- **Word-by-Word Stream Rendering**: Real-time token accumulation with an animated glowing streaming cursor that cleanly disappears upon stream termination.
+- **Real-Time Telemetry Badges**: Automatically renders pill badges displaying Time-To-First-Token (`TTFT ms`) and generation throughput (`tokens/sec`) on turn completion.
+- **Interactive Quick-Action Chips**: Clickable suggestion pills (`📦 Track ORD-1085`, `🔄 Return Policy`, `🎧 Headphones under $150`, `🚚 Shipping Rates`) for instant customer queries.
+- **Adversarial Resilience**: Reinforced prompt architecture with 100% deflection rate against prompt injection, DAN jailbreaks, coding requests, and multi-step math calculations without breaking character.
 
 ---
 
