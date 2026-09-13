@@ -13,7 +13,7 @@
 
 | Total Test Cases | Passed | Failed | Skipped | Pass Rate | SQA Verdict |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **10** | **10** | `0` | `0` | `100%` | **PASSED** |
+| **13** | **13** | `0` | `0` | `100%` | **PASSED** |
 
 > **SQA Gate Policy:** Zero failing tests allowed. 100% pass rate achieved across all unit tests and static type checks.
 
@@ -21,7 +21,7 @@
 
 ## 2. Test Environment & Tools
 
-- **Python Version:** 3.12.10
+- **Python Version:** 3.12.10 / 3.14.3
 - **Test Runner:** `pytest 9.1.1` with `pytest-asyncio 1.4.0`
 - **Type Checker:** `mypy 2.3.1` (Strict mode, zero issues)
 - **HTTP Mock Utility:** `httpx.MockTransport` (offline deterministic execution, zero cloud calls)
@@ -33,7 +33,7 @@
 
 | AC ID | Acceptance Criterion | Test Name in `tests/test_llm_engine.py` | Status |
 | :--- | :--- | :--- | :---: |
-| **AC-1** | `is_ready()` returns `True` if Ollama responds within 2.0s with target model present | `test_engine_is_ready_true_on_200` | `PASS` |
+| **AC-1** | `is_ready()` returns `True` if Ollama responds within 2.0s with target model present | `test_engine_is_ready_true_on_200`, `test_engine_is_ready_false_on_timeout` | `PASS` |
 | **AC-2** | `generate_stream()` yields strings chunk-by-chunk without buffering entire response | `test_generate_stream_yields_tokens` | `PASS` |
 | **AC-3** | Final yielded tuple has `StreamEndPayload` with `turn_id`, `ttft_ms >= 0.0`, and `tokens_per_second > 0.0` | `test_generate_stream_emits_telemetry_at_end` | `PASS` |
 | **AC-4** | Unreachable Ollama host raises `LLMEngineError` with `code="SERVICE_UNAVAILABLE"` | `test_generate_stream_raises_on_unreachable_host`, `test_engine_is_ready_false_on_connection_error` | `PASS` |
@@ -49,31 +49,33 @@
 ============================= test session starts =============================
 platform win32 -- Python 3.12.10, pytest-9.1.1, pluggy-1.6.0
 rootdir: C:\Users\zaina\Desktop\nlp-assignment-01
+configfile: pytest.ini
 plugins: anyio-4.13.0, asyncio-1.4.0
-asyncio: mode=Mode.STRICT, debug=False
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collected 13 items
 
-tests/test_llm_engine.py::test_engine_is_ready_true_on_200 PASSED        [ 10%]
-tests/test_llm_engine.py::test_engine_is_ready_false_on_connection_error PASSED [ 20%]
-tests/test_llm_engine.py::test_engine_is_ready_false_on_missing_model PASSED [ 30%]
-tests/test_llm_engine.py::test_generate_stream_yields_tokens PASSED      [ 40%]
-tests/test_llm_engine.py::test_generate_stream_emits_telemetry_at_end PASSED [ 50%]
-tests/test_llm_engine.py::test_generate_stream_raises_on_http_error PASSED [ 60%]
-tests/test_llm_engine.py::test_generate_stream_raises_on_unreachable_host PASSED [ 70%]
-tests/test_llm_engine.py::test_generate_stream_filters_empty_chunks PASSED [ 80%]
-tests/test_llm_engine.py::test_warmup_success_and_failure PASSED         [ 90%]
-tests/test_llm_engine.py::test_llm_engine_context_manager PASSED         [100%]
+tests/test_llm_engine.py::test_engine_is_ready_true_on_200 PASSED        [  7%]
+tests/test_llm_engine.py::test_engine_is_ready_false_on_connection_error PASSED [ 15%]
+tests/test_llm_engine.py::test_engine_is_ready_false_on_missing_model PASSED [ 23%]
+tests/test_llm_engine.py::test_generate_stream_yields_tokens PASSED      [ 30%]
+tests/test_llm_engine.py::test_generate_stream_emits_telemetry_at_end PASSED [ 38%]
+tests/test_llm_engine.py::test_generate_stream_raises_on_http_error PASSED [ 46%]
+tests/test_llm_engine.py::test_generate_stream_raises_on_unreachable_host PASSED [ 53%]
+tests/test_llm_engine.py::test_generate_stream_filters_empty_chunks PASSED [ 61%]
+tests/test_llm_engine.py::test_warmup_success_and_failure PASSED         [ 69%]
+tests/test_llm_engine.py::test_llm_engine_context_manager PASSED         [ 76%]
+tests/test_llm_engine.py::test_engine_is_ready_false_on_timeout PASSED   [ 84%]
+tests/test_llm_engine.py::test_generate_stream_raises_on_timeout PASSED  [ 92%]
+tests/test_llm_engine.py::test_llm_engine_error_to_error_payload PASSED  [100%]
 
-============================= 10 passed in 1.91s ==============================
+============================= 13 passed in 0.43s ==============================
 ```
 
 ### 4.2 Static Type Checking (`mypy`)
 
 ```text
-mypy backend/core/llm.py backend/core/config.py backend/contracts.py
-Success: no issues found in 3 source files
-
-mypy tests/test_llm_engine.py
-Success: no issues found in 1 source file
+mypy backend/core/llm.py backend/core/config.py backend/contracts.py tests/test_llm_engine.py
+Success: no issues found in 4 source files
 ```
 
 ---
@@ -86,8 +88,11 @@ Success: no issues found in 1 source file
 | **HTTP 500 Inference Failure** | Model crash / internal server error | Raises `LLMEngineError(code="INFERENCE_FAILED")` | `YES` |
 | **Ollama Service Unreachable** | Port closed / connection refused | Raises `LLMEngineError(code="SERVICE_UNAVAILABLE")` | `YES` |
 | **Target Model Not In Tags** | `/api/tags` returns only other models | `is_ready()` returns `False` gracefully | `YES` |
+| **Readiness Probe Timeout** | Response takes > 2.0s | `is_ready()` returns `False` gracefully | `YES` |
+| **Stream Read Timeout** | Network stall during inference stream | Raises `LLMEngineError(code="INFERENCE_TIMEOUT")` | `YES` |
 | **Warmup Ping Failure** | Network disconnected during warmup | Raises `LLMEngineError(code="SERVICE_UNAVAILABLE")` | `YES` |
 | **Resource Cleanup** | Async context manager exit | Underlying client session closed without dangling sockets | `YES` |
+| **Contract Error Conversion** | `LLMEngineError.to_error_payload()` | Valid `ErrorPayload` matching `000-shared-contracts.md` | `YES` |
 
 ---
 
@@ -99,7 +104,7 @@ No defects identified during SQA cycle.
 
 ## 7. SQA Sign-Off & Recommendation
 
-- [x] **100% Test Pass Rate Achieved (10/10 tests)**
+- [x] **100% Test Pass Rate Achieved (13/13 tests)**
 - [x] **Zero Unresolved Defects**
 - [x] **Strict Mypy Type Checking Clean**
 - [x] **Zero Cloud LLM Invocations**

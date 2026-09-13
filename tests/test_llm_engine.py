@@ -5,7 +5,7 @@ from typing import AsyncGenerator, List, Tuple
 import httpx
 import pytest
 
-from backend.contracts import StreamEndPayload
+from backend.contracts import ErrorPayload, StreamEndPayload
 from backend.core.llm import LLMEngine, LLMEngineError
 
 
@@ -219,3 +219,42 @@ async def test_llm_engine_context_manager() -> None:
     async with LLMEngine(host="http://localhost:11434", model="qwen2.5:1.5b") as engine:
         assert engine.host == "http://localhost:11434"
         assert engine.model == "qwen2.5:1.5b"
+
+
+@pytest.mark.asyncio
+async def test_engine_is_ready_false_on_timeout() -> None:
+    """Verify is_ready() gracefully returns False when readiness probe times out."""
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout("Read timeout after 2.0s", request=request)
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        engine = LLMEngine(host="http://localhost:11434", model="qwen2.5:1.5b", client=client)
+        assert await engine.is_ready() is False
+
+
+@pytest.mark.asyncio
+async def test_generate_stream_raises_on_timeout() -> None:
+    """Verify generate_stream() raises LLMEngineError with INFERENCE_TIMEOUT on read timeout."""
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout("Stream read timeout", request=request)
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        engine = LLMEngine(host="http://localhost:11434", model="qwen2.5:1.5b", client=client)
+        with pytest.raises(LLMEngineError) as exc_info:
+            async for _ in engine.generate_stream([{"role": "user", "content": "Hi"}], turn_id="t-to"):
+                pass
+        assert exc_info.value.code == "INFERENCE_TIMEOUT"
+        assert exc_info.value.recoverable is True
+
+
+def test_llm_engine_error_to_error_payload() -> None:
+    """Verify LLMEngineError converts properly to shared contract ErrorPayload."""
+    err = LLMEngineError(message="Service down", code="SERVICE_UNAVAILABLE", recoverable=True)
+    payload = err.to_error_payload()
+    assert isinstance(payload, ErrorPayload)
+    assert payload.code == "SERVICE_UNAVAILABLE"
+    assert payload.message == "Service down"
+    assert payload.recoverable is True
+

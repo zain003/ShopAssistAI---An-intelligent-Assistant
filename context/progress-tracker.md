@@ -19,7 +19,7 @@
 | :---: | :-------------------------------------------- | :-----------: | :----------------------------------------------- |
 | **I** | Business Case & Flow Design                   | **Completed** | `context/project-overview.md`                    |
 | **-** | Context & Feature Specs Definition            | **Completed** | `context/` & `context/feature-specs/`            |
-| **II**| Local LLM Setup & CPU Engine (`FEAT-001`)     | **Completed** | `backend/core/llm.py`, 10/10 tests, SQA report   |
+| **II**| Local LLM Setup & CPU Engine (`FEAT-001`)     | **Completed** | `FEAT-001-BE` + `FEAT-001-VERIFY`: 13/13 tests passed, SQA approved |
 | **III**| Conversation Manager & Memory (`FEAT-002`)   | Not Started   | Sliding window, XML prompt builder, domain guards|
 | **IV**| FastAPI WebSocket Streaming API (`FEAT-003`)  | Not Started   | `/ws/chat` JSON streaming endpoint               |
 | **V** | Web Chat Interface (`FEAT-004`)               | Not Started   | Streaming UI, session reset, history view        |
@@ -48,3 +48,11 @@
 
 - All 7 context files in `context/` synchronized with the E-Commerce domain requirements.
 - Feature specification suite (`000-shared-contracts.md`, `INDEX.md`, `DEVIATIONS.md`, `FEAT-001` through `FEAT-005`) generated in `context/feature-specs/`.
+- `FEAT-001-BE` (Local LLM Engine & CPU Streaming Adapter) implemented in `backend/core/llm.py`.
+- `FEAT-001-VERIFY` executed and 100% completed:
+  - 13/13 automated unit tests passing in `tests/test_llm_engine.py` (readiness probing, model filtering, chunk streaming, TTFT/duration/throughput telemetry, timeouts, and error handling).
+  - Strict type checking clean via `mypy` across all core and test files.
+  - Standards compliance established via `pytest.ini` and `requirements.txt`.
+  - Comprehensive SQA verification report generated in `feature-test-reports/FEAT-001-test-report.md`.
+  - Checklist in `context/feature-specs/FEAT-001-VERIFY-llm-engine.md` fully signed off.
+
