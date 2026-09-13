@@ -11,28 +11,28 @@ node tests/test_frontend.js
 ```
 
 ### Required Test Case Assertions
-- [ ] `test_render_user_message_adds_bubble_to_dom`: PASS
-- [ ] `test_stream_start_creates_assistant_bubble_with_cursor`: PASS
-- [ ] `test_token_appends_text_to_current_bubble`: PASS
-- [ ] `test_stream_end_removes_cursor_and_renders_metrics`: PASS
-- [ ] `test_reset_button_clears_message_list`: PASS
+- [x] `test_render_user_message_adds_bubble_to_dom`: PASS
+- [x] `test_stream_start_creates_assistant_bubble_with_cursor`: PASS
+- [x] `test_token_appends_text_to_current_bubble`: PASS
+- [x] `test_stream_end_removes_cursor_and_renders_metrics`: PASS
+- [x] `test_reset_button_clears_message_list`: PASS
 
 ---
 
 ## 2. Acceptance Criteria Individual Re-Check
-- [ ] AC-1: User message appears in DOM immediately on submission: **PASS/FAIL**
-- [ ] AC-2: Assistant response renders token-by-token in real time: **PASS/FAIL**
-- [ ] AC-3: Streaming cursor is visible during reception and removed on end: **PASS/FAIL**
-- [ ] AC-4: Session reset action clears the view and creates fresh state: **PASS/FAIL**
-- [ ] AC-5: Disconnected status accurately updates badge state: **PASS/FAIL**
+- [x] AC-1: User message appears in DOM immediately on submission: **PASS**
+- [x] AC-2: Assistant response renders token-by-token in real time: **PASS**
+- [x] AC-3: Streaming cursor is visible during reception and removed on end: **PASS**
+- [x] AC-4: Session reset action clears the view and creates fresh state: **PASS**
+- [x] AC-5: Disconnected status accurately updates badge state: **PASS**
 
 ---
 
 ## 3. Definition of Done Compliance
-- [ ] All fake DOM interaction tests pass 100%.
-- [ ] Design verified across mobile and desktop viewport sizes.
-- [ ] CSS token usage strictly conforms to `context/ui-context.md`.
-- [ ] Test report generated and committed in `feature-test-reports/FEAT-004-test-report.md`.
+- [x] All fake DOM interaction tests pass 100%.
+- [x] Design verified across mobile and desktop viewport sizes.
+- [x] CSS token usage strictly conforms to `context/ui-context.md`.
+- [x] Test report generated and committed in `feature-test-reports/FEAT-004-test-report.md`.
 
 ---
 

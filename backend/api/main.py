@@ -89,6 +89,17 @@ def create_app(
     app.include_router(api_router)
     app.include_router(ws_router)
 
+    # Mount static files for web chat interface if frontend directory exists
+    import os
+    from fastapi.staticfiles import StaticFiles
+
+    frontend_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "frontend",
+    )
+    if os.path.isdir(frontend_dir):
+        app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+
     return app
 
 

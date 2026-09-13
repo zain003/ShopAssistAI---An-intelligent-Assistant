@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShopAssist AI — Intelligent E-Commerce Assistant</title>
+  <meta name="description" content="ShopAssist AI is a real-time, streaming e-commerce customer support assistant for order tracking, catalog discovery, and policy guidance.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header Bar -->
+    <header class="chat-header">
+      <div class="brand-group">
+        <div class="brand-icon-wrapper">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+        </div>
+        <div class="brand-info">
+          <h1 class="brand-title">ShopAssist AI</h1>
+          <span class="brand-subtitle">Order Support &amp; Product Assistant</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Live Connection Status Badge -->
+        <div id="status-badge" class="status-badge" title="WebSocket connection status">
+          <span id="status-indicator" class="status-indicator status-connecting"></span>
+          <span id="status-text" class="status-text">Connecting...</span>
+        </div>
+
+        <!-- Reset / New Session Button -->
+        <button id="reset-btn" class="btn-reset" title="Start a fresh conversation" aria-label="Reset Session">
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+            <path d="M21 3v5h-5"></path>
+            <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
+            <path d="M3 21v-5h5"></path>
+          </svg>
+          <span>New Session</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Error Banner for Network or Server Drop -->
+    <div id="error-banner" class="error-banner" role="alert" style="display: none;">
+      <span class="error-icon">⚠️</span>
+      <span id="error-text" class="error-text">Connection lost. Reconnecting...</span>
+      <button id="error-dismiss-btn" class="error-dismiss-btn" aria-label="Dismiss error">✕</button>
+    </div>
+
+    <!-- Main Message Stream Container -->
+    <main id="chat-window" class="chat-window" role="log" aria-live="polite">
+      <div id="messages-list" class="messages-list">
+        <!-- Welcome Card -->
+        <div id="welcome-card" class="welcome-card">
+          <div class="welcome-badge">E-Commerce Customer Care</div>
+          <h2 class="welcome-heading">How can I help you today?</h2>
+          <p class="welcome-desc">
+            I am your dedicated shopping assistant. Ask me to track an active order, find items in our store catalog, or clarify shipping and return guidelines.
+          </p>
+          <div class="welcome-capabilities">
+            <div class="capability-item">
+              <span class="cap-icon">📦</span>
+              <div class="cap-text">
+                <strong>Track Orders</strong>
+                <span>Check live status for ORD-1001 through ORD-1085</span>
+              </div>
+            </div>
+            <div class="capability-item">
+              <span class="cap-icon">🎧</span>
+              <div class="cap-text">
+                <strong>Product Specs</strong>
+                <span>Explore headphones, laptops, and smartwatches</span>
+              </div>
+            </div>
+            <div class="capability-item">
+              <span class="cap-icon">🔄</span>
+              <div class="cap-text">
+                <strong>Store Policies</strong>
+                <span>30-day returns, warranty rules, and shipping rates</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Quick Action Chips -->
+    <div id="chips-container" class="chips-container" aria-label="Quick Action Suggestions">
+      <button class="chip" data-prompt="Track ORD-1085" type="button">
+        <span class="chip-icon">📦</span> Track ORD-1085
+      </button>
+      <button class="chip" data-prompt="Return Policy" type="button">
+        <span class="chip-icon">🔄</span> Return Policy
+      </button>
+      <button class="chip" data-prompt="Noise Canceling Headphones" type="button">
+        <span class="chip-icon">🎧</span> Headphones under $150
+      </button>
+      <button class="chip" data-prompt="Shipping Rates" type="button">
+        <span class="chip-icon">🚚</span> Shipping Rates
+      </button>
+    </div>
+
+    <!-- Input Footer -->
+    <footer id="input-container" class="input-container">
+      <form id="chat-form" class="chat-form" onsubmit="return false;">
+        <div class="input-wrapper">
+          <textarea
+            id="message-input"
+            class="message-input"
+            rows="1"
+            placeholder="Ask about products, track order ORD-XXXX, or return policies..."
+            aria-label="Chat input message"
+            maxlength="2000"
+          ></textarea>
+          <button id="send-btn" class="send-btn" type="submit" aria-label="Send message" title="Send message">
+            <svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </form>
+      <div class="input-footer-hint">
+        <span>Press <kbd>Enter</kbd> to send, <kbd>Shift + Enter</kbd> for newline</span>
+        <span class="zero-rag-badge">Zero-Tool • Local CPU Inference</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
