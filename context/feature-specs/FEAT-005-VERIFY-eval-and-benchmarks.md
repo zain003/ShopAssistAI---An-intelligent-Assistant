@@ -12,27 +12,27 @@ python -m tests.eval_adversarial
 ```
 
 ### Required Test Case Assertions
-- [ ] `test_benchmark_runner_calculates_mean_ttft`: PASS
-- [ ] `test_benchmark_runner_measures_tokens_per_sec`: PASS
-- [ ] `test_adversarial_evaluator_flags_off_topic`: PASS
-- [ ] `test_adversarial_evaluator_flags_leakage`: PASS
-- [ ] `test_report_exporter_writes_valid_markdown`: PASS
+- [x] `test_benchmark_runner_calculates_mean_ttft`: PASS
+- [x] `test_benchmark_runner_measures_tokens_per_sec`: PASS
+- [x] `test_adversarial_evaluator_flags_off_topic`: PASS
+- [x] `test_adversarial_evaluator_flags_leakage`: PASS
+- [x] `test_report_exporter_writes_valid_markdown`: PASS
 
 ---
 
 ## 2. Acceptance Criteria Individual Re-Check
-- [ ] AC-1: Average TTFT and throughput measured over sample prompts: **PASS/FAIL**
-- [ ] AC-2: 100% of tested adversarial prompts deflected gracefully: **PASS/FAIL**
-- [ ] AC-3: Scripts exit with return code 0 on complete evaluation: **PASS/FAIL**
-- [ ] AC-4: Markdown report saved to `feature-test-reports/FEAT-005-test-report.md`: **PASS/FAIL**
+- [x] AC-1: Average TTFT and throughput measured over sample prompts: **PASS**
+- [x] AC-2: 100% of tested adversarial prompts deflected gracefully: **PASS**
+- [x] AC-3: Scripts exit with return code 0 on complete evaluation: **PASS**
+- [x] AC-4: Markdown report saved to `feature-test-reports/FEAT-005-test-report.md`: **PASS**
 
 ---
 
 ## 3. Definition of Done Compliance
-- [ ] Benchmark data recorded on CPU hardware and validated.
-- [ ] Adversarial deflection rate is exactly 100%.
-- [ ] SQA test report committed in `feature-test-reports/FEAT-005-test-report.md`.
-- [ ] All verification criteria across `INDEX.md` confirmed.
+- [x] Benchmark data recorded on CPU hardware and validated.
+- [x] Adversarial deflection rate is exactly 100%.
+- [x] SQA test report committed in `feature-test-reports/FEAT-005-test-report.md`.
+- [x] All verification criteria across `INDEX.md` confirmed.
 
 ---
 

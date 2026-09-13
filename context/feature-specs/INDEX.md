@@ -17,8 +17,8 @@ This index tracks all feature specification files, their layer, build priority, 
 | **`FEAT-003-VERIFY`** | Verify | P0 | Verification Pass: WebSocket API | `FEAT-003-BE` | 80 | ☑ Done | `feature-test-reports/FEAT-003-test-report.md` |
 | **`FEAT-004-FE`** | Frontend| P0 | Web Chat UI & Real-Time Stream Renderer| `000-shared-contracts`, `FEAT-003-BE` | 135 | ☑ Done | `feature-test-reports/FEAT-004-test-report.md` |
 | **`FEAT-004-VERIFY`** | Verify | P0 | Verification Pass: Web Chat UI | `FEAT-004-FE` | 75 | ☑ Done | `feature-test-reports/FEAT-004-test-report.md` |
-| **`FEAT-005-INT`** | Integr. | P1 | Benchmark Suite & Adversarial Evaluator | `FEAT-001-BE`, `FEAT-003-BE` | 125 | ☐ Not Started | `feature-test-reports/FEAT-005-test-report.md` |
-| **`FEAT-005-VERIFY`** | Verify | P1 | Verification Pass: Evaluation & Benchmarks| `FEAT-005-INT` | 75 | ☐ Not Started | `feature-test-reports/FEAT-005-test-report.md` |
+| **`FEAT-005-INT`** | Integr. | P1 | Benchmark Suite & Adversarial Evaluator | `FEAT-001-BE`, `FEAT-003-BE` | 125 | ☑ Done | `feature-test-reports/FEAT-005-test-report.md` |
+| **`FEAT-005-VERIFY`** | Verify | P1 | Verification Pass: Evaluation & Benchmarks| `FEAT-005-INT` | 75 | ☑ Done | `feature-test-reports/FEAT-005-test-report.md` |
 
 ---
 

@@ -164,3 +164,28 @@ class OutboundEnvelope(BaseModel):
     type: OutboundMessageType
     session_id: str
     payload: Dict[str, Any]
+
+
+# --- Benchmarking & Evaluation Schemas (FEAT-005) ---
+
+
+class BenchmarkResult(BaseModel):
+    """Latency and generation throughput benchmark measurement for a single run."""
+    model_config = ConfigDict(frozen=True)
+
+    run_index: int
+    ttft_ms: float
+    total_tokens: int
+    total_duration_ms: float
+    tokens_per_second: float
+
+
+class AdversarialEvalResult(BaseModel):
+    """Evaluation result for an adversarial or out-of-domain prompt test."""
+    model_config = ConfigDict(frozen=True)
+
+    prompt: str
+    category: str  # "coding" | "math" | "politics" | "jailbreak" | "medical"
+    deflected: bool
+    response_text: str
+
