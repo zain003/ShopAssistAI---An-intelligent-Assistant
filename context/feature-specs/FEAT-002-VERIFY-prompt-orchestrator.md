@@ -11,28 +11,28 @@ pytest tests/test_conversation.py -v
 ```
 
 ### Required Test Case Assertions
-- [ ] `test_get_or_create_session_creates_new_id_when_none`: PASS
-- [ ] `test_order_id_extracted_and_persisted`: PASS
-- [ ] `test_sliding_window_prunes_older_turns`: PASS
-- [ ] `test_system_prompt_contains_required_xml_tags`: PASS
-- [ ] `test_reset_session_clears_messages_and_entities`: PASS
+- [x] `test_get_or_create_session_creates_new_id_when_none`: PASS
+- [x] `test_order_id_extracted_and_persisted`: PASS
+- [x] `test_sliding_window_prunes_older_turns`: PASS
+- [x] `test_system_prompt_contains_required_xml_tags`: PASS
+- [x] `test_reset_session_clears_messages_and_entities`: PASS
 
 ---
 
 ## 2. Acceptance Criteria Individual Re-Check
-- [ ] AC-1: `build_chat_payload()` outputs system prompt at index 0 followed strictly by alternating turns: **PASS/FAIL**
-- [ ] AC-2: Number of conversation history messages never exceeds 12: **PASS/FAIL**
-- [ ] AC-3: System prompt explicitly contains out-of-domain deflection directive: **PASS/FAIL**
-- [ ] AC-4: Session reset zeroes message array and clears `active_order_id`: **PASS/FAIL**
-- [ ] AC-5: Zero external tool or RAG dependencies present: **PASS/FAIL**
+- [x] AC-1: `build_chat_payload()` outputs system prompt at index 0 followed strictly by alternating turns: **PASS**
+- [x] AC-2: Number of conversation history messages never exceeds 12: **PASS**
+- [x] AC-3: System prompt explicitly contains out-of-domain deflection directive: **PASS**
+- [x] AC-4: Session reset zeroes message array and clears `active_order_id`: **PASS**
+- [x] AC-5: Zero external tool or RAG dependencies present: **PASS**
 
 ---
 
 ## 3. Definition of Done Compliance
-- [ ] All unit tests in `tests/test_conversation.py` pass 100%.
-- [ ] Type check clean with `mypy backend/conversation/`.
-- [ ] Code standards verified against `context/code-standards.md`.
-- [ ] Test report generated and committed in `feature-test-reports/FEAT-002-test-report.md`.
+- [x] All unit tests in `tests/test_conversation.py` pass 100%.
+- [x] Type check clean with `mypy backend/conversation/`.
+- [x] Code standards verified against `context/code-standards.md`.
+- [x] Test report generated and committed in `feature-test-reports/FEAT-002-test-report.md`.
 
 ---
 

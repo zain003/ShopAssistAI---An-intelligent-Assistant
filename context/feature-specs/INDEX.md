@@ -11,8 +11,8 @@ This index tracks all feature specification files, their layer, build priority, 
 | **`000-shared-contracts`** | CORE | P0 | Shared Data Models, Types & Envelopes | None | 130 | ☑ Done | N/A |
 | **`FEAT-001-BE`** | Backend | P0 | Local LLM Engine & CPU Streaming Adapter | `000-shared-contracts` | 115 | ☑ Done | `feature-test-reports/FEAT-001-test-report.md` |
 | **`FEAT-001-VERIFY`** | Verify | P0 | Verification Pass: LLM Engine | `FEAT-001-BE` | 75 | ☑ Done | `feature-test-reports/FEAT-001-test-report.md` |
-| **`FEAT-002-BE`** | Backend | P0 | Conversation Manager & Prompt Orchestrator| `000-shared-contracts` | 130 | ☐ Not Started | `feature-test-reports/FEAT-002-test-report.md` |
-| **`FEAT-002-VERIFY`** | Verify | P0 | Verification Pass: Dialogue & Memory | `FEAT-002-BE` | 75 | ☐ Not Started | `feature-test-reports/FEAT-002-test-report.md` |
+| **`FEAT-002-BE`** | Backend | P0 | Conversation Manager & Prompt Orchestrator| `000-shared-contracts` | 130 | ☑ Done | `feature-test-reports/FEAT-002-test-report.md` |
+| **`FEAT-002-VERIFY`** | Verify | P0 | Verification Pass: Dialogue & Memory | `FEAT-002-BE` | 75 | ☑ Done | `feature-test-reports/FEAT-002-test-report.md` |
 | **`FEAT-003-BE`** | Backend | P0 | FastAPI WebSocket Streaming Endpoint | `FEAT-001-BE`, `FEAT-002-BE` | 135 | ☐ Not Started | `feature-test-reports/FEAT-003-test-report.md` |
 | **`FEAT-003-VERIFY`** | Verify | P0 | Verification Pass: WebSocket API | `FEAT-003-BE` | 80 | ☐ Not Started | `feature-test-reports/FEAT-003-test-report.md` |
 | **`FEAT-004-FE`** | Frontend| P0 | Web Chat UI & Real-Time Stream Renderer| `000-shared-contracts`, `FEAT-003-BE` | 135 | ☐ Not Started | `feature-test-reports/FEAT-004-test-report.md` |
