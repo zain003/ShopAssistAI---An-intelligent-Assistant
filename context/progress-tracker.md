@@ -2,14 +2,15 @@
 
 ## Current Phase
 
-- **Phase VI (SQA Tests, Latency Benchmarks & Adversarial Evaluation)**: Completed. `FEAT-005-INT` and `FEAT-005-VERIFY` 100% verified (47/47 backend tests passed, 9/9 frontend DOM tests passed, 56/56 total automated tests, 100% adversarial deflection, and full SQA report filed).
-- **Next Phase**: Final Project Packaging, Documentation & Submission.
+- **Assignment 1 (Core Conversational Assistant)**: Completed. `FEAT-001` through `FEAT-005` 100% verified (56/56 total automated tests passed, 100% adversarial deflection, and all SQA reports filed).
+- **Assignment 2 (Retrieval-Augmented Generation / RAG)**: Completed. `FEAT-006` through `FEAT-009` 100% verified (78/78 total automated tests passed: 64 backend + 14 frontend, sub-second CPU retrieval, multi-client concurrency without deadlocks, 100% factual grounding fidelity, and all SQA reports filed).
+- **Next Phase**: Final review and delivery packaging.
 
 ---
 
 ## Current Goal
 
-- All 6 core implementation phases (`FEAT-001` through `FEAT-005`) are completed, benchmarked, and verified with zero defects.
+- All Assignment 1 and Assignment 2 deliverables implemented, tested, benchmarked, and verified across backend, frontend, vector retrieval, and grounding suites.
 
 ---
 
@@ -23,7 +24,11 @@
 | **III**| Conversation Manager & Memory (`FEAT-002`)   | **Completed** | `FEAT-002-BE` + `FEAT-002-VERIFY`: 13/13 tests passed, SQA approved |
 | **IV**| FastAPI WebSocket Streaming API (`FEAT-003`)  | **Completed** | `FEAT-003-BE` + `FEAT-003-VERIFY`: 13/13 tests passed, SQA approved |
 | **V** | Web Chat Interface (`FEAT-004`)               | **Completed** | `FEAT-004-FE` + `FEAT-004-VERIFY`: 9/9 tests passed, SQA approved |
-| **VI**| SQA Tests, Benchmarks & Reports (`FEAT-005`)  | **Completed** | `FEAT-005-INT` + `FEAT-005-VERIFY`: 8/8 unit tests, 56 total tests, 100% deflection, SQA report approved |
+| **VI**| SQA Tests, Benchmarks & Reports (`FEAT-005`)  | **Completed** | `FEAT-005-INT` + `FEAT-005-VERIFY`: 8/8 unit tests, 56 total tests, SQA approved |
+| **VII**| Document Corpus & Indexing (`FEAT-006`)      | **Completed** | `FEAT-006-BE` + `FEAT-006-VERIFY`: 60 docs / 245 chunks indexed, SHA-256 caching, 6/6 tests passed |
+| **VIII**| Vector Retrieval & Grounding (`FEAT-007`)   | **Completed** | `FEAT-007-BE` + `FEAT-007-VERIFY`: Async retrieval, 500-token cap, LRU cache, 6/6 tests passed |
+| **IX**| UI Citations & Telemetry (`FEAT-008`)         | **Completed** | `FEAT-008-FE` + `FEAT-008-VERIFY`: Expandable drawer pills, retrieval ms badge, 14/14 tests passed |
+| **X** | RAG Benchmarks & Evaluation (`FEAT-009`)      | **Completed** | `FEAT-009-INT` + `FEAT-009-VERIFY`: Mean cold latency 22.6ms, 59.4 QPS concurrency, 100% grounding fidelity |
 
 ---
 
@@ -31,9 +36,12 @@
 
 1. **AD-001 (Domain Selection)**: Chose **E-Commerce Order Support Assistant** ("ShopAssist AI"). Provides a rich, highly structured domain with multi-turn flows (order tracking, catalog recommendations, return policy inquiries, and mid-conversation topic shifts).
 2. **AD-002 (Local Model)**: Selected **Qwen2.5-1.5B-Instruct (or 3B) Q4_K_M** running via local Ollama instance. Fits comfortably in CPU memory (under 1.5 GB RAM footprint) and delivers 15–25 tokens/second with TTFT < 1.0s on standard multicore CPUs.
-3. **AD-003 (Strict Zero-Tool / Zero-RAG Architecture)**: Per assignment constraints, all product catalog specs, mock orders, and policy rules are embedded directly into structured XML system prompts. Intelligence is derived purely from prompt design and memory management.
-4. **AD-004 (WebSocket Streaming Protocol)**: Designed an asynchronous JSON envelope protocol over `/ws/chat` (`stream_start`, `token`, `stream_end`, `error`) ensuring true word-by-word token streaming without HTTP polling overhead.
+3. **AD-003 (Assignment 1 In-Prompt Knowledge)**: Embedded static catalog specs, mock orders, and base policies directly into structured XML system prompts.
+4. **AD-004 (WebSocket Streaming Protocol)**: Designed an asynchronous JSON envelope protocol over `/ws/chat` (`stream_start`, `token`, `stream_end`, `error`) ensuring true word-by-word token streaming without HTTP polling overhead. Contract preserved unchanged for Assignment 2.
 5. **AD-005 (Sliding-Window Memory Budget)**: Bounded memory to the last 6 conversation turns (12 messages) plus a static system prompt, maintaining total prompt context strictly under 2,048 tokens to preserve CPU inference speed.
+6. **AD-006 (Local CPU Embedding & Vector Store — Assignment 2)**: Selected `sentence-transformers/all-MiniLM-L6-v2` for local CPU embedding (384-dimensional dense vectors, ~80ms inference per chunk on CPU). Paired with CPU vector storage with SHA-256 document hashing for incremental re-indexing.
+7. **AD-007 (RAG Token Budget & Grounding Strategy)**: Injected retrieved chunks into `<retrieved_context>` with a strict 500-token ceiling (top-3 chunks, ~150 tokens each). When total context approaches limit, older conversation history turns are pruned before dropping retrieved chunks.
+8. **AD-008 (Sub-Second Latency & Failure Decoupling)**: Vector retrieval runs asynchronously via thread pool executor with 1.0s strict timeout and 128-query LRU cache. If similarity score < 0.45 or if vector store fails, the system triggers graceful fallback to general conversation without crashing.
 
 ---
 
@@ -102,5 +110,33 @@
   - Checklists in `context/feature-specs/FEAT-005-VERIFY-eval-and-benchmarks.md` signed off.
   - Status updated in `context/feature-specs/INDEX.md` to `☑ Done`.
   - Comprehensive SQA verification test report generated in `feature-test-reports/FEAT-005-test-report.md`.
+- `FEAT-006-BE` (Document Corpus & Offline Indexing Pipeline) implemented and verified:
+  - Created 60 realistic domain markdown documents in `data/documents/` across 6 categories (`policies`, `shipping`, `products`, `warranties`, `troubleshooting`, `payments`).
+  - Implemented header-aware Markdown chunker (`backend/rag/chunker.py`) with 100–500 character bounds, 50-character overlap, and section header preservation.
+  - Implemented in-memory CPU cosine vector store (`backend/rag/vector_store.py`) with NumPy array normalization and disk persistence in `data/vector_store/`.
+  - Implemented batch CPU indexing engine (`backend/rag/indexer.py`) with SHA-256 fingerprint caching skipping unchanged documents.
+  - Built offline indexing CLI (`scripts/index_documents.py`), generating 245 chunks in 16.6s cold run, with duplicate runs executing in 46.7ms (0 re-computations).
+  - Verified with 6/6 passing unit tests in `tests/test_rag_indexing.py`.
+  - Signed off `feature-test-reports/FEAT-006-test-report.md`.
+- `FEAT-007-BE` (Real-Time Vector Retrieval & Prompt Grounding) implemented and verified:
+  - Implemented thread-safe 128-query LRU cache (`backend/rag/cache.py`) delivering sub-millisecond retrieval on repeat queries.
+  - Implemented asynchronous `VectorRetriever` (`backend/rag/retriever.py`) using `all-MiniLM-L6-v2` with 0.45 similarity threshold, 1.0s timeout fallback, and eager PyTorch JIT warmup.
+  - Extended prompt orchestrator (`backend/conversation/orchestrator.py`) with `format_retrieved_context()` enforcing a strict 500-token context budget into `<retrieved_context>` XML.
+  - Implemented `RAGConversationManager` (`backend/conversation/manager.py`) preserving session history while prioritizing retrieved context.
+  - Extended WebSocket endpoint (`backend/api/websocket.py`) to emit `retrieval_ms` and `citations` in the `stream_end` frame without breaking envelope compatibility.
+  - Verified with 6/6 passing unit tests in `tests/test_rag_retrieval.py`.
+  - Signed off `feature-test-reports/FEAT-007-test-report.md`.
+- `FEAT-008-FE` (Web Chat UI Citation Badges & Telemetry) implemented and verified:
+  - Added CSS styling (`frontend/style.css`) for citation pills, animated drawer dropdowns, verbatim snippets, and general mode fallback badges.
+  - Implemented UI rendering logic (`frontend/app.js`) handling citation pills, click-to-expand snippet drawers, and telemetry display prepending `Retrieval: XXms`.
+  - Verified with 14/14 passing simulated DOM tests in `tests/test_frontend.js`.
+  - Signed off `feature-test-reports/FEAT-008-test-report.md`.
+- `FEAT-009-INT` (RAG Latency Benchmarks & Grounding Evaluation Suite) implemented and verified:
+  - Created live CPU benchmark harness (`tests/benchmark_rag.py`) measuring cold retrieval (22.59ms), cached query (0.02ms), and 5-client concurrency throughput (59.4 QPS, zero deadlocks).
+  - Created factual grounding evaluator (`tests/eval_rag_grounding.py`) achieving 100% fidelity on domain queries and 100% resilience across Phase IV failure scenarios.
+  - Created automated pytest test suite (`tests/test_rag_eval.py`) with 5/5 passing tests.
+  - Signed off `feature-test-reports/FEAT-009-test-report.md`.
+  - Final regression suite: 78/78 total passing tests (64 backend + 14 frontend), with zero static typing errors under `mypy` across 33 source files.
+
 
 

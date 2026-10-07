@@ -10,11 +10,11 @@ import re
 import threading
 import time
 import uuid
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
-from backend.contracts import ChatMessage, Role, SessionState
+from backend.contracts import ChatMessage, RetrievalResult, Role, SessionState
 from backend.conversation.memory import prune_messages
-from backend.conversation.orchestrator import render_system_prompt
+from backend.conversation.orchestrator import format_retrieved_context, render_system_prompt
 
 # Regex patterns for entity extraction
 ORDER_ID_PATTERN = re.compile(r"\bORD-(\d{4})\b", re.IGNORECASE)
@@ -226,3 +226,58 @@ class ConversationManager:
                 payload.append({"role": msg.role.value, "content": msg.content})
 
         return payload
+
+
+class RAGConversationManager:
+    """Coordinates conversation sessions and grounds turns with real-time vector retrieval."""
+
+    def __init__(self, base_manager: ConversationManager, retriever: Any) -> None:
+        """Initializes the RAG conversation manager with an underlying ConversationManager and retriever."""
+        self.base_manager = base_manager
+        self.retriever = retriever
+
+    async def build_rag_chat_payload(
+        self,
+        session_id: str,
+        user_query: str,
+        max_context_tokens: int = 500,
+        max_history_turns: int = 6,
+    ) -> Tuple[List[Dict[str, str]], RetrievalResult]:
+        """Retrieves domain context, formats prompt, and returns chat payload + retrieval result.
+        
+        Args:
+            session_id: Active session identifier.
+            user_query: Current turn customer question.
+            max_context_tokens: Token ceiling for retrieved document chunks (default: 500).
+            max_history_turns: Maximum conversation turns to retain in sliding window.
+            
+        Returns:
+            Tuple of (chat_payload, retrieval_result).
+        """
+        # 1. Asynchronously retrieve top-k chunks with score threshold and timeout
+        retrieval_result = await self.retriever.retrieve(
+            query=user_query,
+            top_k=3,
+            score_threshold=0.45,
+            timeout_seconds=1.0,
+        )
+
+        # 2. Format retrieved context XML block capped at max_context_tokens
+        context_xml = format_retrieved_context(retrieval_result, max_tokens=max_context_tokens)
+
+        # 3. Assemble chat payload with grounded system prompt
+        session = self.base_manager.get_or_create_session(session_id)
+        with self.base_manager._lock:
+            system_prompt = render_system_prompt(
+                active_order_id=session.active_order_id,
+                retrieved_context_xml=context_xml,
+            )
+            pruned_messages = prune_messages(session.messages, max_turns=max_history_turns)
+
+            payload: List[Dict[str, str]] = [
+                {"role": Role.SYSTEM.value, "content": system_prompt}
+            ]
+            for msg in pruned_messages:
+                payload.append({"role": msg.role.value, "content": msg.content})
+
+        return payload, retrieval_result

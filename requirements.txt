@@ -12,3 +12,9 @@ httpx>=0.27.0
 pytest>=9.0.0
 pytest-asyncio>=1.4.0
 mypy>=2.3.0
+
+# RAG Embedding & Vector Pipeline (Assignment 2)
+sentence-transformers>=3.0.0
+torch>=2.2.0
+transformers>=4.44.0,<4.45.0
+numpy>=1.26.0

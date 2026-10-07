@@ -98,3 +98,10 @@ A row of clickable pill chips above the input to guide user flows:
 - Placeholder: `"Ask about products, track order ORD-XXXX, or return policies..."`
 - Keyboard shortcuts: `Enter` to submit, `Shift + Enter` for newline.
 - Primary Send Button with paper airplane or arrow icon.
+
+### 5. Visible Citations & Retrieval Telemetry (Assignment 2)
+- **Citation Pill Row**: Rendered below grounded assistant messages; displays source title and match percentage (e.g., `📄 Return Policy (92%)`).
+- **Interactive Drawer**: Clicking a pill expands a card showing document title, section header, and chunk excerpt snippet using `--bg-surface-elevated` and `--border-default`.
+- **Telemetry Pill**: Appended to bottom-right of assistant messages displaying: `Retrieval: {retrieval_ms}ms | TTFT: {ttft_ms}ms | {tok/s} tok/s`.
+- **Fallback Badge**: For ungrounded turns, renders a subtle muted badge: `💬 Direct Dialogue (No matching doc)`.
+

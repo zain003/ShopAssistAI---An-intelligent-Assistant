@@ -4,7 +4,7 @@ Assembles system prompts embedding domain persona, catalog products, customer or
 store return/shipping policies, and deflection guardrails without external tools or RAG.
 """
 
-from typing import Optional
+from typing import Any, Optional
 
 from backend.conversation.data import (
     CATALOG_PRODUCTS,
@@ -68,16 +68,60 @@ def _format_orders_xml() -> str:
     return "\n".join(lines)
 
 
-def render_system_prompt(active_order_id: Optional[str] = None) -> str:
+def format_retrieved_context(
+    retrieval_result: Optional[Any],
+    max_tokens: int = 500,
+) -> str:
+    """Formats retrieved document chunks into structured XML within token budget.
+    
+    Args:
+        retrieval_result: RetrievalResult containing retrieved chunks and fallback state.
+        max_tokens: Maximum token ceiling for the retrieved context block (default: 500).
+        
+    Returns:
+        Formatted XML string or empty string if fallback/no chunks.
+    """
+    if not retrieval_result or getattr(retrieval_result, "is_fallback", False):
+        return ""
+
+    chunks = getattr(retrieval_result, "chunks", [])
+    if not chunks:
+        return ""
+
+    lines = ["<retrieved_context>"]
+    accumulated_tokens = 20  # Overhead for enclosing tag
+
+    for chunk in chunks:
+        chunk_tokens = getattr(chunk, "token_count", len(chunk.content.split())) + 15
+        if accumulated_tokens + chunk_tokens > max_tokens and len(lines) > 1:
+            break
+
+        lines.append(
+            f'  <document id="{chunk.doc_id}" title="{chunk.title}" section="{chunk.section_header}">'
+        )
+        lines.append(f"    {chunk.content}")
+        lines.append("  </document>")
+        accumulated_tokens += chunk_tokens
+
+    lines.append("</retrieved_context>")
+    return "\n".join(lines)
+
+
+def render_system_prompt(
+    active_order_id: Optional[str] = None,
+    retrieved_context_xml: Optional[str] = None,
+) -> str:
     """Renders the complete structured XML system prompt for LLM inference.
 
     Constructs a comprehensive domain prompt embedding persona, product catalog,
-    mock order records, store policies, active session focus, and explicit
-    out-of-domain deflection rules per FEAT-002-BE.
+    mock order records, store policies, active session focus, retrieved context (RAG),
+    and explicit out-of-domain deflection rules per FEAT-002-BE and FEAT-007-BE.
 
     Args:
         active_order_id: Optional order ID currently referenced in the session
             (e.g., 'ORD-1085') to provide immediate contextual focus.
+        retrieved_context_xml: Optional formatted XML string containing retrieved
+            knowledge chunks for grounded answering.
 
     Returns:
         str: Fully rendered XML prompt ready for injection at index 0 of chat payload.
@@ -105,6 +149,8 @@ def render_system_prompt(active_order_id: Optional[str] = None) -> str:
                 "</active_session_order>\n"
             )
 
+    retrieved_section = f"\n{retrieved_context_xml.strip()}\n" if retrieved_context_xml and retrieved_context_xml.strip() else ""
+
     prompt = f"""
 <store_persona>
 {STORE_PERSONA}
@@ -115,7 +161,7 @@ def render_system_prompt(active_order_id: Optional[str] = None) -> str:
 {orders_xml}
 {active_order_section}
 {STORE_POLICIES}
-
+{retrieved_section}
 <deflection_rules>
 {DEFLECTION_DIRECTIVE}
 
@@ -139,6 +185,8 @@ Examples of Required Off-Topic Deflection:
 4. When answering return or refund questions, explain the 30-day window and item condition requirements.
 5. If the customer asks about anything outside of this store's products, orders, returns, or shipping (such as coding, math, politics, or medicine), strictly refuse with:
    "I can only assist with questions regarding our store's products, orders, returns, and shipping policies."
+6. If <retrieved_context> is provided, ground your response factually in the retrieved document chunks and cite the document title where appropriate.
+7. If no relevant documents are found and the query cannot be answered from the prompt, state politely that the specific details are not available.
 </conversation_instructions>
 """.strip()
 

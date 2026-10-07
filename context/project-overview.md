@@ -102,16 +102,17 @@ Please let me know if you have any other questions regarding an existing order o
 ## Scope
 
 ### In Scope
-- **Product Information**: Answering questions on specs, compatibility, pricing, and availability for pre-configured catalog items.
+- **Product Information**: Answering questions on specs, compatibility, pricing, and availability for catalog items.
 - **Order Tracking**: Looking up mock order records by Order ID (`ORD-XXXX`) or email, providing shipping status, carrier info, and estimated delivery dates.
-- **Return Policy**: Explaining 30-day return conditions, non-returnable items, restocking fees, and refund timelines.
-- **Shipping Policy**: Explaining shipping tiers (Standard 3–5 days, Express 1–2 days), free shipping minimums ($50+), and international delivery rules.
+- **Document Knowledge Base (RAG - Assignment 2)**: Answering detailed domain inquiries from an indexed corpus of 50–100 store markdown documents covering detailed return policies, shipping tiers, product user manuals, warranties, and troubleshooting guides.
+- **Response Grounding & Source Citations**: Grounding answers strictly in retrieved chunks, citing source documents in responses, and displaying citation badges in the chat interface.
+- **Graceful Failure Handling**: Falling back to general conversation when no relevant matches exist (score < 0.45) or upon retrieval timeouts without fabricating answers.
 - **Out-of-Domain Guardrails**: Firm, polite deflection of irrelevant or adversarial requests back to store support.
-- **Session Memory Management**: Maintaining conversation history across multi-turn exchanges with automatic sliding-window truncation.
+- **Session Memory Management**: Maintaining conversation history across multi-turn exchanges with automatic sliding-window truncation and RAG token budgeting.
 
 ### Out of Scope
-- External Tool / Plugin execution or live database web scraping (strictly banned per assignment constraints).
-- Retrieval-Augmented Generation (RAG) or vector database lookups (banned per assignment constraints).
+- External tool / plugin execution, live agent workflows, or live internet web scraping (strictly prohibited per assignment constraints).
+- External cloud LLM APIs (OpenAI, Claude, Cohere) — 100% local CPU inference only.
 - Financial transaction processing or taking raw credit card details in chat.
 - Answering questions outside the store domain (general trivia, coding, creative writing, political discussions).
 
@@ -119,8 +120,10 @@ Please let me know if you have any other questions regarding an existing order o
 
 ## Success Criteria
 
-1. **Zero External Inference**: Runs 100% locally on CPU via an open-weight quantized model (Q4_K_M).
-2. **WebSocket Streaming**: Implements `/ws/chat` streaming responses word-by-word with JSON protocol.
-3. **Turn-Taking Fidelity**: Correctly tracks customer order IDs and product mentions across 5+ turns without losing context.
-4. **Adversarial Deflection**: 100% of out-of-domain queries are deflected without crashing or breaking persona.
-5. **Verified Multi-Layer Test Suite**: All tests pass 100% (Frontend fake DOM, API contracts, Backend memory manager, and session storage) with reports saved in `feature-test-reports/`.
+1. **Zero External Inference**: Runs 100% locally on CPU via an open-weight quantized model (Q4_K_M) and local embedding model (`all-MiniLM-L6-v2`).
+2. **WebSocket Streaming**: Implements `/ws/chat` streaming responses word-by-word with JSON protocol and citation telemetry.
+3. **Sub-Second Retrieval Latency**: Vector retrieval completes in under 1.0 second on local CPU prior to token streaming.
+4. **Factual Grounding & Visible Citations**: Answers reference indexed store documents and display interactive citation cards in the web UI.
+5. **Turn-Taking Fidelity**: Correctly tracks customer order IDs and product mentions across 5+ turns without losing context.
+6. **Phase IV Failure Resilience**: 100% of out-of-domain queries and retrieval timeouts are handled gracefully without crashes or hallucinations.
+7. **Verified Multi-Layer Test Suite**: All tests pass 100% across Frontend simulated DOM, API contracts, offline indexing, vector retrieval, and benchmarks with reports saved in `feature-test-reports/`.

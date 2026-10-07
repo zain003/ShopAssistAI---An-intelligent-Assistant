@@ -540,6 +540,147 @@ const tests = [
       assert.ok(sentBubble, 'Clicking quick chip should send message');
       assert.ok(sentBubble.textContent.includes('Track ORD-1085'));
     }
+  },
+  {
+    name: 'test_stream_end_with_citations_renders_citation_badges',
+    fn: async (env) => {
+      const { app, elements } = env;
+      app.handleStreamStart({ turn_id: 'turn_cit_1' });
+      app.handleToken({ token: 'Here is our return policy.', turn_id: 'turn_cit_1' });
+      app.handleStreamEnd({
+        turn_id: 'turn_cit_1',
+        total_tokens: 6,
+        ttft_ms: 45,
+        total_duration_ms: 120,
+        tokens_per_second: 50,
+        retrieval_ms: 32.5,
+        citations: [
+          {
+            doc_id: 'return_policy',
+            title: 'Return Policy',
+            section_header: 'Overview',
+            score: 0.89,
+            snippet: 'Items must be returned within 30 days.'
+          }
+        ]
+      });
+
+      const assistantBubbles = elements.messagesList.querySelectorAll('.message-assistant');
+      const latestBubble = assistantBubbles[assistantBubbles.length - 1];
+      const citationsContainer = latestBubble.querySelector('.citations-container');
+      assert.ok(citationsContainer, 'Container with class citations-container must be appended');
+
+      const pill = citationsContainer.querySelector('.citation-pill');
+      assert.ok(pill, 'Citation pill must be rendered');
+      assert.ok(pill.textContent.includes('Return Policy'), 'Pill text must include title');
+      assert.ok(pill.textContent.includes('89%'), 'Pill text must include score percentage');
+    }
+  },
+  {
+    name: 'test_clicking_citation_badge_expands_snippet_drawer',
+    fn: async (env) => {
+      const { app, elements } = env;
+      app.handleStreamStart({ turn_id: 'turn_cit_2' });
+      app.handleStreamEnd({
+        turn_id: 'turn_cit_2',
+        total_tokens: 5,
+        ttft_ms: 40,
+        total_duration_ms: 100,
+        tokens_per_second: 50,
+        citations: [
+          {
+            doc_id: 'shipping_policy',
+            title: 'Shipping Policy',
+            section_header: 'Standard Shipping',
+            score: 0.92,
+            snippet: 'Standard shipping takes 3-5 days.'
+          }
+        ]
+      });
+
+      const assistantBubbles = elements.messagesList.querySelectorAll('.message-assistant');
+      const latestBubble = assistantBubbles[assistantBubbles.length - 1];
+      const pill = latestBubble.querySelector('.citation-pill');
+      const drawer = latestBubble.querySelector('.citation-drawer');
+      assert.ok(pill, 'Citation pill must exist');
+      assert.ok(drawer, 'Citation drawer must exist');
+
+      assert.strictEqual(drawer.classList.contains('is-expanded'), false, 'Drawer initially collapsed');
+
+      // Click pill to toggle expand
+      pill.dispatchEvent('click');
+      assert.strictEqual(drawer.classList.contains('is-expanded'), true, 'Drawer must expand on click');
+      assert.strictEqual(pill.classList.contains('is-expanded'), true, 'Pill must receive is-expanded class');
+
+      // Click pill again to collapse
+      pill.dispatchEvent('click');
+      assert.strictEqual(drawer.classList.contains('is-expanded'), false, 'Drawer must collapse on second click');
+    }
+  },
+  {
+    name: 'test_stream_end_renders_retrieval_latency_in_telemetry_badge',
+    fn: async (env) => {
+      const { app, elements } = env;
+      app.handleStreamStart({ turn_id: 'turn_cit_3' });
+      app.handleStreamEnd({
+        turn_id: 'turn_cit_3',
+        total_tokens: 10,
+        ttft_ms: 55,
+        total_duration_ms: 150,
+        tokens_per_second: 60,
+        retrieval_ms: 42.1,
+        citations: []
+      });
+
+      const assistantBubbles = elements.messagesList.querySelectorAll('.message-assistant');
+      const latestBubble = assistantBubbles[assistantBubbles.length - 1];
+      const badge = latestBubble.querySelector('.latency-badge');
+      assert.ok(badge, 'Latency telemetry badge must exist');
+      assert.ok(badge.textContent.includes('Retrieval: 42ms'), 'Telemetry text must contain Retrieval latency');
+      assert.ok(badge.textContent.includes('TTFT: 55ms'), 'Telemetry text must contain TTFT');
+    }
+  },
+  {
+    name: 'test_fallback_turn_renders_general_mode_indicator',
+    fn: async (env) => {
+      const { app, elements } = env;
+      app.handleStreamStart({ turn_id: 'turn_cit_4' });
+      app.handleStreamEnd({
+        turn_id: 'turn_cit_4',
+        total_tokens: 10,
+        ttft_ms: 30,
+        total_duration_ms: 80,
+        tokens_per_second: 50,
+        is_fallback: true,
+        citations: []
+      });
+
+      const assistantBubbles = elements.messagesList.querySelectorAll('.message-assistant');
+      const latestBubble = assistantBubbles[assistantBubbles.length - 1];
+      const fallbackBadge = latestBubble.querySelector('.citation-fallback-badge');
+      assert.ok(fallbackBadge, 'Fallback badge must be rendered when citations are empty or is_fallback is true');
+      assert.ok(fallbackBadge.textContent.includes('Direct Dialogue'), 'Fallback badge must indicate general dialogue mode');
+    }
+  },
+  {
+    name: 'test_empty_citations_does_not_render_empty_citation_container',
+    fn: async (env) => {
+      const { app, elements } = env;
+      app.handleStreamStart({ turn_id: 'turn_cit_5' });
+      app.handleStreamEnd({
+        turn_id: 'turn_cit_5',
+        total_tokens: 10,
+        ttft_ms: 30,
+        total_duration_ms: 80,
+        tokens_per_second: 50,
+        citations: []
+      });
+
+      const assistantBubbles = elements.messagesList.querySelectorAll('.message-assistant');
+      const latestBubble = assistantBubbles[assistantBubbles.length - 1];
+      const citationsContainer = latestBubble.querySelector('.citations-container');
+      assert.strictEqual(citationsContainer, null, 'No empty citation container should exist when citations list is empty');
+    }
   }
 ];
 

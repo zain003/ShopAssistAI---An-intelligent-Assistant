@@ -3,7 +3,7 @@
 **Feature ID:** `FEAT-005-INT`  
 **Spec Reference:** `context/feature-specs/FEAT-005-INT-eval-and-benchmarks.md`  
 **Verification Ref:** `context/feature-specs/FEAT-005-VERIFY-eval-and-benchmarks.md`  
-**Date Tested:** `2026-09-14`  
+**Date Tested:** `2026-09-28`  
 **SQA Status:** `PASSED`  
 **Tester:** `SQA Automation Agent`  
 
@@ -54,16 +54,16 @@
 
 | Run | Test Prompt Query | TTFT (ms) | Tokens | Duration (ms) | Throughput |
 | :---: | :--- | :---: | :---: | :---: | :---: |
-| #1 | Where is my order ORD-1085 and when will it arrive? | 279.76 ms | 131 | 2130.63 ms | 61.48 tps |
-| #2 | What is your return policy for audio products and shoes? | 255.16 ms | 197 | 3028.54 ms | 65.05 tps |
-| #3 | Can you recommend wireless headphones with noise cancellation under $150? | 34.40 ms | 167 | 2386.38 ms | 69.98 tps |
-| #4 | How much does express shipping cost and what is the cutoff time for same-day dispatch? | 35.60 ms | 62 | 905.79 ms | 68.45 tps |
-| #5 | Can I return an item after 45 days if it was defective? | 37.97 ms | 20 | 319.07 ms | 62.68 tps |
+| #1 | Where is my order ORD-1085 and when will it arrive? | 284.49 ms | 216 | 3293.88 ms | 65.58 tps |
+| #2 | What is your return policy for audio products and shoes? | 255.49 ms | 235 | 3520.92 ms | 66.74 tps |
+| #3 | Can you recommend wireless headphones with noise cancellation under $150? | 41.39 ms | 240 | 3387.45 ms | 70.85 tps |
+| #4 | How much does express shipping cost and what is the cutoff time for same-day dispatch? | 44.99 ms | 58 | 852.45 ms | 68.04 tps |
+| #5 | Can I return an item after 45 days if it was defective? | 38.69 ms | 20 | 318.32 ms | 62.83 tps |
 
 #### Latency & Throughput Summary Statistics:
-- **Mean Time-To-First-Token (TTFT):** `128.58 ms` (Min: `34.40 ms` / Max: `279.76 ms`)
-- **Mean Generation Throughput:** `65.53 tokens/sec` (Min: `61.48 tps` / Max: `69.98 tps`)
-- **Average Response Duration:** `1754.08 ms`
+- **Mean Time-To-First-Token (TTFT):** `133.01 ms` (Min: `38.69 ms` / Max: `284.49 ms`)
+- **Mean Generation Throughput:** `66.81 tokens/sec` (Min: `62.83 tps` / Max: `70.85 tps`)
+- **Average Response Duration:** `2274.60 ms`
 - **Target Compliance:** TTFT is well under the 1,000 ms SLA threshold and throughput exceeds the 15–25 tps target by >2x on local CPU.
 
 ---

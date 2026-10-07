@@ -300,7 +300,14 @@
           this.activeStream.cursorEl.parentNode.removeChild(this.activeStream.cursorEl);
         }
 
-        // Render latency telemetry badge
+        // Render visible source citations if present
+        if (payload.citations && Array.isArray(payload.citations) && payload.citations.length > 0) {
+          this.renderCitationBadges(this.activeStream.bubbleEl, payload.citations);
+        } else if (payload.is_fallback || (payload.citations && Array.isArray(payload.citations) && payload.citations.length === 0)) {
+          this.renderFallbackBadge(this.activeStream.bubbleEl);
+        }
+
+        // Render latency telemetry badge with retrieval metrics
         this.renderTelemetryBadge(this.activeStream.bubbleEl, payload);
         this.activeStream = null;
       }
@@ -313,11 +320,85 @@
       }
     }
 
+    renderCitationBadges(bubbleEl, citations) {
+      if (!bubbleEl || !citations || citations.length === 0) return;
+
+      const container = document.createElement('div');
+      container.className = 'citations-container';
+
+      const header = document.createElement('div');
+      header.className = 'citations-header';
+      header.textContent = 'Sources & Grounding:';
+      container.appendChild(header);
+
+      const list = document.createElement('div');
+      list.className = 'citations-list';
+
+      citations.forEach((citation) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'citation-item-wrapper';
+
+        const pct = Math.round((citation.score || 0) * 100);
+        const pill = document.createElement('button');
+        pill.className = 'citation-pill';
+        pill.type = 'button';
+        pill.setAttribute('aria-expanded', 'false');
+        pill.textContent = `📄 ${citation.title} (${pct}%)`;
+
+        const drawer = document.createElement('div');
+        drawer.className = 'citation-drawer';
+
+        const drawerTitle = document.createElement('div');
+        drawerTitle.className = 'citation-drawer-title';
+        drawerTitle.textContent = `${citation.title} — ${citation.section_header}`;
+
+        const snippet = document.createElement('div');
+        snippet.className = 'citation-snippet';
+        snippet.textContent = citation.snippet || '';
+
+        drawer.appendChild(drawerTitle);
+        drawer.appendChild(snippet);
+
+        pill.addEventListener('click', () => {
+          const isExpanded = drawer.classList.toggle('is-expanded');
+          pill.classList.toggle('is-expanded', isExpanded);
+          pill.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+        });
+
+        wrapper.appendChild(pill);
+        wrapper.appendChild(drawer);
+        list.appendChild(wrapper);
+      });
+
+      container.appendChild(list);
+      bubbleEl.appendChild(container);
+    }
+
+    renderFallbackBadge(bubbleEl) {
+      if (!bubbleEl) return;
+      const fallbackBadge = document.createElement('div');
+      fallbackBadge.className = 'citation-fallback-badge';
+      fallbackBadge.textContent = '💬 Direct Dialogue (No matching doc)';
+      bubbleEl.appendChild(fallbackBadge);
+    }
+
     renderTelemetryBadge(bubbleEl, payload) {
       if (!bubbleEl) return;
 
       const badge = document.createElement('div');
       badge.className = 'latency-badge';
+
+      // Prepend retrieval latency if present (FEAT-008-FE)
+      if (payload.retrieval_ms != null) {
+        const retSpan = document.createElement('span');
+        retSpan.className = 'latency-metric';
+        retSpan.textContent = `Retrieval: ${Math.round(payload.retrieval_ms)}ms`;
+        badge.appendChild(retSpan);
+
+        const dot = document.createElement('span');
+        dot.textContent = ' • ';
+        badge.appendChild(dot);
+      }
 
       const ttft = payload.ttft_ms ? Math.round(payload.ttft_ms) : 0;
       const tokPerSec = payload.tokens_per_second != null ? Number(payload.tokens_per_second).toFixed(1) : '0';

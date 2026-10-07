@@ -137,15 +137,28 @@ class TokenPayload(BaseModel):
     turn_id: str
 
 
+class CitationItem(BaseModel):
+    """Source document citation for grounded responses."""
+    model_config = ConfigDict(frozen=True)
+
+    doc_id: str
+    title: str
+    section_header: str
+    score: float
+    snippet: str
+
+
 class StreamEndPayload(BaseModel):
     """Completion payload emitting performance telemetry."""
     model_config = ConfigDict(frozen=True)
 
     turn_id: str
     total_tokens: int
-    ttft_ms: float           # Time to first token in milliseconds
-    total_duration_ms: float # Total response time in milliseconds
+    ttft_ms: float                     # Time to first token in milliseconds
+    total_duration_ms: float           # Total response time in milliseconds
     tokens_per_second: float
+    retrieval_ms: Optional[float] = None  # Retrieval latency in milliseconds (RAG)
+    citations: List[CitationItem] = Field(default_factory=list)  # Grounded citations
 
 
 class ErrorPayload(BaseModel):
@@ -188,4 +201,67 @@ class AdversarialEvalResult(BaseModel):
     category: str  # "coding" | "math" | "politics" | "jailbreak" | "medical"
     deflected: bool
     response_text: str
+
+
+# --- Retrieval-Augmented Generation Schemas (FEAT-006, FEAT-007) ---
+
+
+class DocumentMetadata(BaseModel):
+    """Metadata describing an ingested domain knowledge document."""
+    model_config = ConfigDict(frozen=True)
+
+    doc_id: str
+    title: str
+    category: str
+    source_path: str
+    doc_hash: str
+    created_at: float
+
+
+class DocumentChunk(BaseModel):
+    """Semantic chunk extracted from a domain knowledge document."""
+    model_config = ConfigDict(frozen=True)
+
+    chunk_id: str
+    doc_id: str
+    title: str
+    section_header: str
+    content: str
+    token_count: int
+    char_count: int
+    chunk_index: int
+    embedding: Optional[List[float]] = None
+
+
+class RetrievalQuery(BaseModel):
+    """Parameters for on-the-fly vector similarity search."""
+    model_config = ConfigDict(frozen=True)
+
+    query_text: str
+    top_k: int = Field(default=3, ge=1, le=10)
+    score_threshold: float = Field(default=0.45, ge=0.0, le=1.0)
+    category_filter: Optional[str] = None
+
+
+class RetrievalResult(BaseModel):
+    """Result of vector retrieval containing chunks, citations, and latency."""
+    model_config = ConfigDict(frozen=True)
+
+    query: str
+    chunks: List[DocumentChunk]
+    citations: List[CitationItem]
+    retrieval_ms: float
+    from_cache: bool = False
+    is_fallback: bool = False
+
+
+class RetrievalMetrics(BaseModel):
+    """Performance telemetry for a retrieval execution."""
+    model_config = ConfigDict(frozen=True)
+
+    total_retrieval_ms: float
+    chunks_evaluated: int
+    chunks_returned: int
+    cache_hit: bool
+
 

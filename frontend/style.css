@@ -725,3 +725,110 @@ html, body {
     gap: 4px;
   }
 }
+
+/* ==========================================================================
+   RAG Citations & Grounding Telemetry (FEAT-008-FE)
+   ========================================================================== */
+
+.citations-container {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.citations-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.citations-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.citation-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background-color: rgba(99, 102, 241, 0.12);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.citation-pill:hover {
+  background-color: rgba(99, 102, 241, 0.22);
+  border-color: #818cf8;
+  transform: translateY(-1px);
+}
+
+.citation-pill.is-expanded {
+  background-color: rgba(99, 102, 241, 0.28);
+  border-color: #a5b4fc;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+}
+
+.citation-drawer {
+  display: none;
+  padding: 10px 14px;
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  animation: fadeIn 0.2s ease;
+  margin-top: 4px;
+}
+
+.citation-drawer.is-expanded {
+  display: block;
+}
+
+.citation-drawer-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.citation-snippet {
+  line-height: 1.5;
+  color: var(--text-secondary);
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px 10px;
+  border-radius: 4px;
+  border-left: 2px solid var(--accent-primary);
+  font-family: var(--font-sans);
+  white-space: pre-wrap;
+}
+
+.citation-fallback-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 4px 10px;
+  background-color: rgba(148, 163, 184, 0.1);
+  color: var(--text-tertiary);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 6px;
+  font-size: 11px;
+  font-style: italic;
+}

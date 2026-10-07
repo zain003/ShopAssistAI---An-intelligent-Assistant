@@ -19,6 +19,14 @@ This index tracks all feature specification files, their layer, build priority, 
 | **`FEAT-004-VERIFY`** | Verify | P0 | Verification Pass: Web Chat UI | `FEAT-004-FE` | 75 | ☑ Done | `feature-test-reports/FEAT-004-test-report.md` |
 | **`FEAT-005-INT`** | Integr. | P1 | Benchmark Suite & Adversarial Evaluator | `FEAT-001-BE`, `FEAT-003-BE` | 125 | ☑ Done | `feature-test-reports/FEAT-005-test-report.md` |
 | **`FEAT-005-VERIFY`** | Verify | P1 | Verification Pass: Evaluation & Benchmarks| `FEAT-005-INT` | 75 | ☑ Done | `feature-test-reports/FEAT-005-test-report.md` |
+| **`FEAT-006-BE`** | Backend | P0 | Offline Indexing Pipeline & Document Corpus | `000-shared-contracts` | 130 | ☑ Done | `feature-test-reports/FEAT-006-test-report.md` |
+| **`FEAT-006-VERIFY`** | Verify | P0 | Verification Pass: RAG Indexing Pipeline | `FEAT-006-BE` | 75 | ☑ Done | `feature-test-reports/FEAT-006-test-report.md` |
+| **`FEAT-007-BE`** | Backend | P0 | Real-Time Vector Retrieval & Grounding | `000-shared-contracts`, `FEAT-002-BE`, `FEAT-006-BE` | 135 | ☑ Done | `feature-test-reports/FEAT-007-test-report.md` |
+| **`FEAT-007-VERIFY`** | Verify | P0 | Verification Pass: Vector Retrieval & Grounding | `FEAT-007-BE` | 75 | ☑ Done | `feature-test-reports/FEAT-007-test-report.md` |
+| **`FEAT-008-FE`** | Frontend| P1 | Web Chat UI Citation Badges & Telemetry | `000-shared-contracts`, `FEAT-004-FE`, `FEAT-007-BE` | 125 | ☑ Done | `feature-test-reports/FEAT-008-test-report.md` |
+| **`FEAT-008-VERIFY`** | Verify | P1 | Verification Pass: Citation UI & Telemetry | `FEAT-008-FE` | 75 | ☑ Done | `feature-test-reports/FEAT-008-test-report.md` |
+| **`FEAT-009-INT`** | Integr. | P1 | RAG Latency Benchmarks & Grounding Eval | `FEAT-006-BE`, `FEAT-007-BE`, `FEAT-005-INT` | 130 | ☑ Done | `feature-test-reports/FEAT-009-test-report.md` |
+| **`FEAT-009-VERIFY`** | Verify | P1 | Verification Pass: RAG Benchmarks & Eval | `FEAT-009-INT` | 75 | ☑ Done | `feature-test-reports/FEAT-009-test-report.md` |
 
 ---
 

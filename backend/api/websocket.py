@@ -165,7 +165,21 @@ async def websocket_chat_endpoint(websocket: WebSocket) -> None:
 
                 user_text = raw_user_text.strip()
                 conversation_manager.add_user_message(current_session_id, user_text)
-                messages = conversation_manager.build_chat_payload(current_session_id)
+
+                # Check if RAG manager is available on app state
+                rag_manager = getattr(websocket.app.state, "rag_manager", None)
+                retrieval_ms: Optional[float] = None
+                citations_list: List[Dict[str, Any]] = []
+
+                if rag_manager is not None:
+                    messages, retrieval_res = await rag_manager.build_rag_chat_payload(
+                        current_session_id, user_text
+                    )
+                    retrieval_ms = retrieval_res.retrieval_ms
+                    citations_list = [c.model_dump(mode="json") for c in retrieval_res.citations]
+                else:
+                    messages = conversation_manager.build_chat_payload(current_session_id)
+
                 turn_id = f"turn_{uuid.uuid4().hex[:8]}"
 
                 # Emit stream_start frame
@@ -196,10 +210,16 @@ async def websocket_chat_endpoint(websocket: WebSocket) -> None:
                             conversation_manager.add_assistant_message(
                                 current_session_id, "".join(full_response)
                             )
+                            end_payload_dict = end_payload.model_dump(mode="json")
+                            if retrieval_ms is not None:
+                                end_payload_dict["retrieval_ms"] = retrieval_ms
+                            if citations_list:
+                                end_payload_dict["citations"] = citations_list
+
                             end_frame = OutboundEnvelope(
                                 type=OutboundMessageType.STREAM_END,
                                 session_id=current_session_id,
-                                payload=end_payload.model_dump(mode="json"),
+                                payload=end_payload_dict,
                             )
                             await websocket.send_json(end_frame.model_dump(mode="json"))
 
