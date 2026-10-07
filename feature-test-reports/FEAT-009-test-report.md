@@ -13,9 +13,9 @@
 
 | Category | Metric | Measured Value | Target Standard | SQA Verdict |
 | :--- | :--- | :---: | :---: | :---: |
-| **Retrieval Latency** | Mean Cold CPU Latency | **22.59 ms** | < 1,000 ms | **PASS** |
-| **Cached Retrieval** | Mean Cache Hit Latency | **0.02 ms** | < 10 ms | **PASS** |
-| **Multi-Client Concurrency** | 5 Simultaneous Clients | **59.4 QPS** | Zero Deadlock | **PASS** |
+| **Retrieval Latency** | Mean Cold CPU Latency | **16.94 ms** | < 1,000 ms | **PASS** |
+| **Cached Retrieval** | Mean Cache Hit Latency | **0.01 ms** | < 10 ms | **PASS** |
+| **Multi-Client Concurrency** | 5 Simultaneous Clients | **88.0 QPS** | Zero Deadlock | **PASS** |
 | **Factual Grounding** | Domain Document Fidelity | **100.0%** | >= 90% | **PASS** |
 | **Phase IV Failure Handling** | Graceful Fallback Rate | **100% (3/3 Scenarios)**| 100% | **PASS** |
 
@@ -39,10 +39,10 @@ Tested across standard customer queries with run #0 discarded as warmup:
 
 | Benchmark Run Metric | Measured CPU Value | Target Ceiling | Status |
 | :--- | :---: | :---: | :---: |
-| **Mean Cold Retrieval Latency** | **22.59 ms** | < 1,000 ms | **PASS** |
-| **P50 Latency (Median)** | **23.87 ms** | < 500 ms | **PASS** |
-| **P95 Latency (Tail)** | **33.36 ms** | < 1,000 ms | **PASS** |
-| **Mean In-Memory Cached Latency** | **0.02 ms** | < 10 ms | **PASS** |
+| **Mean Cold Retrieval Latency** | **16.94 ms** | < 1,000 ms | **PASS** |
+| **P50 Latency (Median)** | **16.37 ms** | < 500 ms | **PASS** |
+| **P95 Latency (Tail)** | **18.86 ms** | < 1,000 ms | **PASS** |
+| **Mean In-Memory Cached Latency** | **0.01 ms** | < 10 ms | **PASS** |
 
 ---
 
@@ -52,9 +52,9 @@ Executed 5 simultaneous asynchronous worker tasks simulating concurrent WebSocke
 
 - **Simultaneous Client Workers:** 5 clients
 - **Total Queries Dispatched:** 25 requests
-- **Total Concurrency Wall Time:** 0.42 s
-- **System Query Throughput:** **59.4 queries/second**
-- **Average Per-Query Latency Under Load:** **82.5 ms**
+- **Total Concurrency Wall Time:** 0.28 s
+- **System Query Throughput:** **88.0 queries/second**
+- **Average Per-Query Latency Under Load:** **54.49 ms**
 - **Deadlocks / Thread Contention:** **0 detected**
 
 ---
