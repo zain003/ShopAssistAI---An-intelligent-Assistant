@@ -18,3 +18,8 @@ sentence-transformers>=3.0.0
 torch>=2.2.0
 transformers>=4.44.0,<4.45.0
 numpy>=1.26.0
+
+# Voice pipeline (Assignment 3) — local ASR + TTS
+faster-whisper>=1.0.0
+piper-tts>=1.2.0
+pyttsx3>=2.90

@@ -1,7 +1,7 @@
 """Structured XML system prompt orchestrator for ShopAssist AI.
 
 Assembles system prompts embedding domain persona, catalog products, customer orders,
-store return/shipping policies, and deflection guardrails without external tools or RAG.
+store return/shipping policies, RAG context, tool schemas, and deflection guardrails.
 """
 
 from typing import Any, Optional
@@ -110,18 +110,20 @@ def format_retrieved_context(
 def render_system_prompt(
     active_order_id: Optional[str] = None,
     retrieved_context_xml: Optional[str] = None,
+    tools_xml: Optional[str] = None,
 ) -> str:
     """Renders the complete structured XML system prompt for LLM inference.
 
     Constructs a comprehensive domain prompt embedding persona, product catalog,
     mock order records, store policies, active session focus, retrieved context (RAG),
-    and explicit out-of-domain deflection rules per FEAT-002-BE and FEAT-007-BE.
+    optional tool schemas, and explicit out-of-domain deflection rules.
 
     Args:
         active_order_id: Optional order ID currently referenced in the session
             (e.g., 'ORD-1085') to provide immediate contextual focus.
         retrieved_context_xml: Optional formatted XML string containing retrieved
             knowledge chunks for grounded answering.
+        tools_xml: Optional formatted tool schemas + calling instructions.
 
     Returns:
         str: Fully rendered XML prompt ready for injection at index 0 of chat payload.
@@ -150,6 +152,7 @@ def render_system_prompt(
             )
 
     retrieved_section = f"\n{retrieved_context_xml.strip()}\n" if retrieved_context_xml and retrieved_context_xml.strip() else ""
+    tools_section = f"\n{tools_xml.strip()}\n" if tools_xml and tools_xml.strip() else ""
 
     prompt = f"""
 <store_persona>
@@ -162,15 +165,18 @@ def render_system_prompt(
 {active_order_section}
 {STORE_POLICIES}
 {retrieved_section}
+{tools_section}
 <deflection_rules>
 {DEFLECTION_DIRECTIVE}
 
-Examples of Required Off-Topic Deflection:
+Examples of Required Off-Topic Deflection (reply with ONLY the refusal sentence — no extra facts):
 - Customer: "Write a Python script to scrape a website using BeautifulSoup."
   Assistant: "I can only assist with questions regarding our store's products, orders, returns, and shipping policies."
 - Customer: "What is the square root of 144 plus 55 divided by 5?"
   Assistant: "I can only assist with questions regarding our store's products, orders, returns, and shipping policies."
 - Customer: "Who should I vote for in the upcoming presidential election?"
+  Assistant: "I can only assist with questions regarding our store's products, orders, returns, and shipping policies."
+- Customer: "Who is Virat Kohli?"
   Assistant: "I can only assist with questions regarding our store's products, orders, returns, and shipping policies."
 - Customer: "What dosage of amoxicillin should I give a 5-year-old child?"
   Assistant: "I can only assist with questions regarding our store's products, orders, returns, and shipping policies."
@@ -179,14 +185,18 @@ Examples of Required Off-Topic Deflection:
 </deflection_rules>
 
 <conversation_instructions>
-1. Always address customers with courtesy and warmth.
+1. Always address customers with courtesy and warmth for in-domain store questions.
 2. When answering order status inquiries, clearly list Status, Carrier, Tracking Number, and Estimated Delivery.
 3. When recommending products, highlight price, key features, and in-stock status.
 4. When answering return or refund questions, explain the 30-day window and item condition requirements.
-5. If the customer asks about anything outside of this store's products, orders, returns, or shipping (such as coding, math, politics, or medicine), strictly refuse with:
+5. If the customer asks about anything outside of this store's products, orders, returns, or shipping
+   (coding, math, politics, medicine, sports, celebrities, trivia, news), reply with ONLY:
    "I can only assist with questions regarding our store's products, orders, returns, and shipping policies."
+   Do not add any other sentences.
 6. If <retrieved_context> is provided, ground your response factually in the retrieved document chunks and cite the document title where appropriate.
-7. If no relevant documents are found and the query cannot be answered from the prompt, state politely that the specific details are not available.
+7. If no relevant documents are found and the query is still a store question, answer from catalog/orders/policies in this prompt only — never invent outside knowledge.
+8. When <available_tools> is present, prefer calling lookup_order / search_catalog / calculate / crm_memory for live facts instead of guessing.
+9. Store-related arithmetic (order totals, tax, shipping fees) and CRM remember/recall are in-domain — use tools, do not refuse them.
 </conversation_instructions>
 """.strip()
 

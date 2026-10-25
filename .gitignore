@@ -71,3 +71,11 @@ dmypy.json
 # OS generated
 .DS_Store
 Thumbs.db
+
+# Local voice models (download via scripts/download_piper_voice.py)
+models/piper/*.onnx
+models/piper/*.onnx.json
+!models/piper/.gitkeep
+
+# Whisper / HF caches (optional local override)
+.cache/huggingface/

@@ -8,8 +8,8 @@
 [![Vector Store](https://img.shields.io/badge/vector%20store-CPU%20Cosine%20(zero%20cloud)-purple.svg)](#vector-storage--cpu-cosine-engine)
 [![Latency](https://img.shields.io/badge/retrieval%20latency-%3C%2025ms%20(CPU)-success.svg)](#retrieval-latency--concurrency-benchmarks)
 
-> **Advanced Conversational AI & Local Retrieval-Augmented Generation (RAG)**  
-> An intelligent, real-time conversational order support assistant built for modern e-commerce. Operates entirely on local CPU hardware using quantized open-weight Large Language Models paired with an offline vector indexing pipeline, sub-second CPU cosine vector search, strict context grounding budgets, real-time citation cards with drawer snippets, and resilient Phase IV failure fallbacks.  
+> **Advanced Conversational AI, Local RAG, Voice Pipeline & Tools**  
+> An intelligent, real-time e-commerce support assistant on local CPU: quantized LLM, offline RAG, local ASR/TTS voice mode, and a tool orchestrator (order lookup, catalog search, calculator, CRM). Text WebSocket contract from Assignments 1–2 is unchanged; audio and tool events are additive.  
 > **Live Public URL**: [https://shopassist-green.vercel.app/](https://shopassist-green.vercel.app/)
 
 ---
@@ -18,16 +18,17 @@
 
 1. [Project Overview & Capabilities](#project-overview--capabilities)
 2. [Dual-Stage Architecture (Core Dialogue + Local CPU RAG)](#dual-stage-architecture)
-3. [Offline Indexing Pipeline & Document Corpus](#offline-indexing-pipeline--document-corpus)
-4. [Real-Time Vector Retrieval & Prompt Grounding](#real-time-vector-retrieval--prompt-grounding)
-5. [Frontend Citations UI & Telemetry](#frontend-citations-ui--telemetry)
-6. [Phase IV Failure Mode Resilience](#phase-iv-failure-mode-resilience)
-7. [Retrieval Latency & Concurrency Benchmarks](#retrieval-latency--concurrency-benchmarks)
-8. [Local LLM Selection & Dialogue Management](#local-llm-selection--dialogue-management)
-9. [Adversarial Deflection Suite](#adversarial-deflection-suite)
-10. [Setup & Execution Instructions](#setup--execution-instructions)
-11. [Test Suite & Quality Assurance](#test-suite--quality-assurance)
-12. [Known Limitations](#known-limitations)
+3. [Assignment 3 — Voice Pipeline & Tools](#assignment-3--voice-pipeline--tools)
+4. [Offline Indexing Pipeline & Document Corpus](#offline-indexing-pipeline--document-corpus)
+5. [Real-Time Vector Retrieval & Prompt Grounding](#real-time-vector-retrieval--prompt-grounding)
+6. [Frontend Citations UI & Telemetry](#frontend-citations-ui--telemetry)
+7. [Phase IV Failure Mode Resilience](#phase-iv-failure-mode-resilience)
+8. [Retrieval Latency & Concurrency Benchmarks](#retrieval-latency--concurrency-benchmarks)
+9. [Local LLM Selection & Dialogue Management](#local-llm-selection--dialogue-management)
+10. [Adversarial Deflection Suite](#adversarial-deflection-suite)
+11. [Setup & Execution Instructions](#setup--execution-instructions)
+12. [Test Suite & Quality Assurance](#test-suite--quality-assurance)
+13. [Known Limitations](#known-limitations)
 
 ---
 
@@ -41,7 +42,9 @@
 - **Store Policies & Warranties**: Grounded answers for return windows (30 days), restocking fees, international returns, 1-year hardware warranties, and replacement parts.
 - **Hardware Troubleshooting Guides**: Step-by-step diagnostic procedures for Bluetooth pairing, battery drain, firmware updates, and factory resets.
 - **Dynamic Source Citations**: Real-time citation pills indicating which indexed policy, user guide, or manual informed each answer, with expandable snippet drawers.
-- **Adversarial & Injection Deflection**: 100% deflection rate against prompt jailbreaks (DAN), coding, multi-step math, and political queries back to store topics.
+- **Adversarial & Injection Deflection**: Hard gate against jailbreaks, coding, politics, and trivia; store math / CRM tool use allowed.
+- **Local Voice Mode (Assignment 3)**: Mic audio streamed to the backend; `faster-whisper` ASR; Piper/pyttsx3 TTS speaks sentence-by-sentence while tokens stream.
+- **Tool Orchestrator (Assignment 3)**: Prompt-based function calling with timeouts for `lookup_order`, `search_catalog`, `calculate`, and bonus `crm_memory`.
 
 ---
 
@@ -53,6 +56,8 @@ ShopAssist AI is structured into decoupled, contract-governed layers:
 graph TD
     subgraph Frontend ["Frontend Layer (Browser)"]
         UI[Web Chat UI - HTML5 / CSS3 / ES6]
+        Mic[Mic PCM Capture]
+        Speakers[TTS Audio Queue Playback]
         CitationsUI[Citation Pills & Drawer Snippets]
         WSClient[WebSocket Manager - Reconnect & Telemetry]
     end
@@ -60,6 +65,19 @@ graph TD
     subgraph API ["Backend API Layer (FastAPI)"]
         Router[REST Endpoints - /api/health]
         WSEndpoint[WebSocket Endpoint - /ws/chat]
+    end
+
+    subgraph Voice ["Voice Pipeline - Local"]
+        ASR[faster-whisper tiny.en]
+        TTS[Piper TTS / pyttsx3 fallback]
+    end
+
+    subgraph Tools ["Tool Orchestrator"]
+        TO[ToolOrchestrator - 2s timeout]
+        T1[lookup_order]
+        T2[search_catalog]
+        T3[calculate]
+        T4[crm_memory]
     end
 
     subgraph RAG ["RAG Retrieval & Grounding Layer"]
@@ -81,7 +99,16 @@ graph TD
     end
 
     UI <-->|Bidirectional JSON Envelopes| WSClient
+    Mic -->|audio_chunk / audio_end| WSClient
+    WSClient -->|tts_audio_chunk| Speakers
     WSClient <-->|WebSocket Stream /ws/chat| WSEndpoint
+    WSEndpoint --> ASR
+    ASR -->|final transcript| CM
+    WSEndpoint --> TO
+    TO --> T1
+    TO --> T2
+    TO --> T3
+    TO --> T4
     WSEndpoint --> CM
     CM --> Extractor
     CM --> Retriever
@@ -91,8 +118,74 @@ graph TD
     CM --> Orchestrator
     Orchestrator --> Engine
     Engine <-->|Async HTTP Stream /api/chat| Ollama
+    WSEndpoint --> TTS
     WSEndpoint -.->|Citations & Latency Payload| CitationsUI
 ```
+
+---
+
+## Assignment 3 — Voice Pipeline & Tools
+
+### Model choices
+| Role | Model | Why |
+| :--- | :--- | :--- |
+| LLM | `llama3.2:3b` via Ollama | Same as A1/A2; local streaming |
+| ASR | `faster-whisper` `tiny.en` (override with `ASR_MODEL_SIZE`) | Local CPU STT; no browser/cloud speech APIs |
+| TTS | Piper (`en_US-lessac-medium`) with `pyttsx3` / tone fallback | Local sentence streaming; set `PIPER_MODEL_PATH` |
+| Embeddings | `all-MiniLM-L6-v2` | Unchanged from Assignment 2 |
+
+### WebSocket contract (additive)
+Existing text types (`user_message`, `token`, `stream_end`, …) are unchanged.
+
+| Direction | Type | Purpose |
+| :--- | :--- | :--- |
+| In | `audio_chunk` | Base64 PCM s16le mic frames + `sample_rate` |
+| In | `audio_end` | Client finished utterance → run ASR |
+| Out | `asr_partial` / `asr_final` | Live / final transcript |
+| Out | `tts_audio_chunk` / `tts_end` | WAV audio for ordered playback |
+| Out | `tool_call` / `tool_result` | Tool visibility for UI / viva |
+| Out | `stream_end` extras | `asr_ms`, `tool_ms`, `tts_first_audio_ms`, `end_of_speech_to_first_audio_ms` |
+
+Spoken turns call the **same** `handle_user_turn` path as typed text (memory, RAG, tools, streaming).
+
+### Tools
+
+#### 1. `lookup_order`
+- **Description**: Look up mock ApexStyle order by `ORD-XXXX`.
+- **Schema**: `{ "order_id": string }`
+- **Example LLM call**: `{"tool": "lookup_order", "args": {"order_id": "ORD-1085"}}`
+
+#### 2. `search_catalog`
+- **Description**: Search catalog by name / SKU / category.
+- **Schema**: `{ "query": string, "category"?: string, "limit"?: int }`
+- **Example**: `{"tool": "search_catalog", "args": {"query": "headphones"}}`
+
+#### 3. `calculate`
+- **Description**: Safe AST math for totals / tax / shipping.
+- **Schema**: `{ "expression": string }`
+- **Example**: `{"tool": "calculate", "args": {"expression": "(129.99 + 5.99) * 1.08"}}`
+
+#### 4. Bonus — `crm_memory`
+- **Description**: Persist / recall customer profile in `data/crm_store.json`.
+- **Schema**: `{ "action": "get"|"update", "user_id"?, "session_id"?, "name"?, "email"?, "phone"?, "preferences"?, "last_interaction"? }`
+- **Example get**: `{"tool": "crm_memory", "args": {"action": "get", "user_id": "alice@example.com"}}`
+- **Example update**: `{"tool": "crm_memory", "args": {"action": "update", "session_id": "sess_abc", "name": "Alice", "preferences": "express shipping"}}`
+
+Tool calls are asynchronous with a **2.0s timeout**; failures return a clear error object (no hang/crash). Function calling is **prompt-based** JSON (easy to explain in viva).
+
+### Latency targets (per voice turn)
+Report these from the `stream_end` badge / logs:
+
+| Metric | Target |
+| :--- | :--- |
+| ASR latency (`asr_ms`) | ideally &lt; 1–2 s on CPU (`tiny.en`) |
+| Retrieval (`retrieval_ms`) | typically &lt; 25–200 ms (cached/hot) |
+| Tools (`tool_ms`) | &lt; 2 s combined (timeout hard-cap) |
+| LLM TTFT (`ttft_ms`) | model-dependent; keep streaming |
+| TTS first audio (`tts_first_audio_ms`) | first sentence, not full reply |
+| End of speech → first audio | aim ~1–2 s when ASR+tools are light |
+
+Concurrent users: each WebSocket connection is independent; ASR/TTS run in thread pools so two clients do not block each other’s event loop.
 
 ---
 
@@ -253,10 +346,16 @@ Tested using [`tests/eval_adversarial.py`](file:///c:/Users/zaina/Desktop/Folder
 ### Prerequisites
 1. **Python 3.10+** (Python 3.12 recommended).
 2. **Ollama**: Installed and running locally.
-3. **Model**:
+3. **Models**:
    ```bash
    ollama pull llama3.2:3b
    ```
+4. **Voice (Assignment 3)**: `faster-whisper` downloads `tiny.en` on first ASR use. For Piper TTS:
+   ```bash
+   python scripts/download_piper_voice.py
+   set PIPER_MODEL_PATH=%CD%\models\piper\en_US-lessac-medium.onnx
+   ```
+   Optional: `set VOICE_WARMUP=1` to preload ASR/TTS at server start. If Piper is missing, TTS falls back to `pyttsx3` or a short tone placeholder so the pipeline still streams audio.
 
 ### 1. Installation
 ```bash
@@ -278,6 +377,7 @@ Open your browser and navigate to:
 ```
 http://127.0.0.1:8000/
 ```
+Use the **mic button** for voice mode (local ASR → same chat/RAG/tools path → streaming TTS). Typed chat continues to work unchanged.
 
 ### 4. Run Benchmarks & Grounding Evaluation
 ```bash
@@ -289,22 +389,29 @@ python tests/benchmark_latency.py
 
 # Run adversarial deflection evaluation
 python tests/eval_adversarial.py
+
+# Tool + TTS smoke latency checks
+pytest tests/benchmark_voice.py -v
+pytest tests/test_tools.py -v
 ```
 
 ---
 
 ## Test Suite & Quality Assurance
 
-ShopAssist AI adheres to a strict test-first development practice with **78 passing tests** and zero static typing errors:
+ShopAssist AI adheres to a strict test-first development practice. Assignment 3 adds tool, CRM, VAD/sentence, and voice smoke tests:
 
 ```bash
-# Run full backend test suite (64 tests)
+# Backend unit/integration (including tools + voice helpers)
 pytest -v
 
-# Run frontend simulated DOM test suite (14 tests)
+# Tool + TTS smoke latency
+pytest tests/test_tools.py tests/benchmark_voice.py -v
+
+# Frontend simulated DOM test suite
 node tests/test_frontend.js
 
-# Run static type checking across all modules
+# Static type checking
 mypy backend tests
 ```
 
@@ -319,8 +426,10 @@ mypy backend tests
 | **RAG Indexing** | `tests/test_rag_indexing.py` | 6 | Document chunking, vector storage, cosine search, SHA-256 caching |
 | **RAG Retrieval** | `tests/test_rag_retrieval.py` | 6 | Asynchronous retriever, 1.0s timeout, LRU cache, 500-token cap |
 | **RAG Evaluation** | `tests/test_rag_eval.py` | 5 | Sub-second latency assertion, concurrency, grounding fidelity |
+| **Tools + CRM** | `tests/test_tools.py` | 11 | Schemas, timeouts, order/catalog/calc/CRM |
+| **Voice helpers** | `tests/test_voice_sentences.py` | 4 | Sentence splitter, VAD silence detection |
 | **Frontend DOM** | `tests/test_frontend.js` | 14 | Citation pills, drawer expansion, retrieval latency badge, fallback |
-| **TOTAL** | — | **78** | **100% Pass Rate (78/78 Passed)** |
+| **TOTAL** | — | **93+** | Includes Assignment 3 tool/voice coverage |
 
 ---
 
@@ -329,11 +438,14 @@ mypy backend tests
 1. **In-Memory Vector Search**: Vector calculations run in-memory on CPU. While extremely fast (< 25ms) for collections under 10,000 chunks, massive enterprise collections (1,000,000+ chunks) would require approximate nearest neighbor indexing (e.g. HNSW / Faiss).
 2. **Context Horizon Pruning**: The conversation sliding window retains 6 turns (12 messages). While extracted entities (like `ORD-1085`) remain pinned, conversational subtleties from 10+ turns ago are pruned to maintain CPU inference speeds.
 3. **Local Daemon Prerequisite**: The backend requires a local Ollama process running on `127.0.0.1:11434`. If Ollama is offline, the API returns clean `SERVICE_UNAVAILABLE` error frames without crashing.
-4. **Volatile Session Storage**: Session states and order bindings are held in memory with 1-hour TTL cleanup; server restarts reset active conversation memory.
+4. **Volatile Session Storage**: Session states and order bindings are held in memory with 1-hour TTL cleanup; server restarts reset active conversation memory. CRM profiles in `data/crm_store.json` persist across restarts.
+5. **Local ASR/TTS cold start**: First voice turn downloads/loads Whisper (and Piper if configured); subsequent turns are faster. End-of-speech → first-audio can exceed ~2s on weak CPUs when ASR + tool probe + TTFT stack.
+6. **Prompt-based tools**: Small local models may occasionally skip tool JSON or emit prose instead; the orchestrator still answers from RAG/catalog when no tool call is parsed.
+7. **Browser mic permissions**: Voice mode requires HTTPS or `localhost` and user-granted microphone access. No cloud or browser SpeechRecognition APIs are used.
 
 ---
 
 ## License & Authors
 - **Author**: Zain & Team
-- **Course**: NLP Assignment 01 & 02 — Conversational AI & RAG System
+- **Course**: NLP Assignments 01–03 — Conversational AI, RAG, Voice & Tools
 - **Repository**: [ShopAssistAI — Intelligent Assistant](https://github.com/zain003/ShopAssistAI---An-intelligent-Assistant.git)

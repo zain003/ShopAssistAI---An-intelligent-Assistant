@@ -18,6 +18,9 @@
       this.chipsContainer = document.getElementById('chips-container');
       this.messageInput = document.getElementById('message-input');
       this.sendBtn = document.getElementById('send-btn');
+      this.micBtn = document.getElementById('mic-btn');
+      this.voiceStatus = document.getElementById('voice-status');
+      this.voiceStatusText = document.getElementById('voice-status-text');
       this.resetBtn = document.getElementById('reset-btn');
       this.statusBadge = document.getElementById('status-badge');
       this.statusIndicator = document.getElementById('status-indicator');
@@ -35,6 +38,16 @@
       this.reconnectTimer = null;
       this.heartbeatTimer = null;
       this.activeStream = null; // { turnId, bubbleEl, textEl, cursorEl, text: "" }
+
+      // Voice capture / playback
+      this.isRecording = false;
+      this.mediaStream = null;
+      this.audioContext = null;
+      this.scriptProcessor = null;
+      this.ttsAudioContext = null;
+      this.ttsQueue = [];
+      this.ttsPlaying = false;
+      this.pendingUserFromVoice = false;
 
       // Initialization
       this.initEvents();
@@ -232,9 +245,205 @@
           // Heartbeat acknowledged
           break;
 
+        case 'asr_partial':
+          if (payload && payload.text && this.voiceStatusText) {
+            this.voiceStatusText.textContent = 'Hearing: ' + payload.text;
+          }
+          break;
+
+        case 'asr_final':
+          if (payload && payload.text) {
+            this.appendMessage('user', payload.text);
+            this.pendingUserFromVoice = true;
+            if (this.voiceStatusText) {
+              const ms = payload.asr_ms != null ? ` (${Math.round(payload.asr_ms)}ms ASR)` : '';
+              this.voiceStatusText.textContent = 'Transcript ready' + ms;
+            }
+          }
+          break;
+
+        case 'tts_audio_chunk':
+          if (payload && payload.audio_b64) {
+            this.enqueueTtsAudio(payload.audio_b64, payload.format || 'wav');
+          }
+          break;
+
+        case 'tts_end':
+          // Playback continues from queue until empty
+          break;
+
+        case 'tool_call':
+          this.renderToolBadge(
+            'Calling tool: ' + (payload.tool || '?') +
+            (payload.args ? ' ' + JSON.stringify(payload.args) : '')
+          );
+          break;
+
+        case 'tool_result':
+          this.renderToolBadge(
+            'Tool result (' + (payload.tool || '?') + '): ' +
+            JSON.stringify(payload.result || {}).slice(0, 180)
+          );
+          break;
+
         default:
           console.warn('Unknown envelope type received:', type);
           break;
+      }
+    }
+
+    renderToolBadge(text) {
+      if (!this.messagesList) return;
+      const row = document.createElement('div');
+      row.className = 'message-row message-assistant-row';
+      const badge = document.createElement('div');
+      badge.className = 'tool-call-badge';
+      badge.textContent = text;
+      row.appendChild(badge);
+      this.messagesList.appendChild(row);
+      this.scrollToBottom();
+    }
+
+    // ========================================================================
+    // Voice capture (local mic → PCM16 chunks over WebSocket)
+    // ========================================================================
+
+    async toggleRecording() {
+      if (this.isRecording) {
+        await this.stopRecording(true);
+      } else {
+        await this.startRecording();
+      }
+    }
+
+    async startRecording() {
+      if (this.connectionState === 'streaming' || this.isRecording) return;
+      if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+        this.showErrorBanner('Connect to the server before using voice.');
+        return;
+      }
+
+      try {
+        this.mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            echoCancellation: true,
+            noiseSuppression: true,
+          },
+        });
+      } catch (err) {
+        this.showErrorBanner('Microphone permission denied or unavailable.');
+        return;
+      }
+
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
+        sampleRate: 16000,
+      });
+      const source = this.audioContext.createMediaStreamSource(this.mediaStream);
+      // ScriptProcessor is deprecated but widely available; buffer ~4096 samples
+      const bufferSize = 4096;
+      this.scriptProcessor = this.audioContext.createScriptProcessor(bufferSize, 1, 1);
+      this.scriptProcessor.onaudioprocess = (event) => {
+        if (!this.isRecording) return;
+        const input = event.inputBuffer.getChannelData(0);
+        const pcm = this.floatTo16BitPCM(input);
+        const b64 = this.arrayBufferToBase64(pcm.buffer);
+        this.sendEnvelope('audio_chunk', {
+          data: b64,
+          sample_rate: this.audioContext.sampleRate || 16000,
+          encoding: 'pcm_s16le',
+        });
+      };
+      source.connect(this.scriptProcessor);
+      this.scriptProcessor.connect(this.audioContext.destination);
+
+      this.isRecording = true;
+      if (this.micBtn) this.micBtn.classList.add('is-recording');
+      if (this.voiceStatus) this.voiceStatus.style.display = 'flex';
+      if (this.voiceStatusText) this.voiceStatusText.textContent = 'Listening... tap mic to send';
+      this.setInputsDisabled(true);
+      if (this.micBtn) this.micBtn.disabled = false;
+    }
+
+    async stopRecording(sendEnd) {
+      this.isRecording = false;
+      if (this.scriptProcessor) {
+        try { this.scriptProcessor.disconnect(); } catch (e) {}
+        this.scriptProcessor.onaudioprocess = null;
+        this.scriptProcessor = null;
+      }
+      if (this.audioContext) {
+        try { await this.audioContext.close(); } catch (e) {}
+        this.audioContext = null;
+      }
+      if (this.mediaStream) {
+        this.mediaStream.getTracks().forEach((t) => t.stop());
+        this.mediaStream = null;
+      }
+      if (this.micBtn) this.micBtn.classList.remove('is-recording');
+      if (sendEnd) {
+        if (this.voiceStatusText) this.voiceStatusText.textContent = 'Transcribing...';
+        this.sendEnvelope('audio_end', {});
+      } else if (this.voiceStatus) {
+        this.voiceStatus.style.display = 'none';
+      }
+      this.setInputsDisabled(false);
+    }
+
+    floatTo16BitPCM(float32Array) {
+      const buffer = new ArrayBuffer(float32Array.length * 2);
+      const view = new DataView(buffer);
+      for (let i = 0; i < float32Array.length; i++) {
+        let s = Math.max(-1, Math.min(1, float32Array[i]));
+        view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+      }
+      return new Int16Array(buffer);
+    }
+
+    arrayBufferToBase64(buffer) {
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+      }
+      return btoa(binary);
+    }
+
+    // ========================================================================
+    // TTS playback queue
+    // ========================================================================
+
+    enqueueTtsAudio(audioB64, format) {
+      this.ttsQueue.push({ audioB64: audioB64, format: format || 'wav' });
+      if (!this.ttsPlaying) {
+        this.playNextTts();
+      }
+    }
+
+    async playNextTts() {
+      if (!this.ttsQueue.length) {
+        this.ttsPlaying = false;
+        return;
+      }
+      this.ttsPlaying = true;
+      const item = this.ttsQueue.shift();
+      try {
+        const binary = atob(item.audioB64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        if (!this.ttsAudioContext) {
+          this.ttsAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        const audioBuffer = await this.ttsAudioContext.decodeAudioData(bytes.buffer.slice(0));
+        const source = this.ttsAudioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(this.ttsAudioContext.destination);
+        source.onended = () => this.playNextTts();
+        source.start(0);
+      } catch (err) {
+        console.warn('TTS playback failed', err);
+        this.playNextTts();
       }
     }
 
@@ -245,6 +454,9 @@
     handleStreamStart(payload) {
       this.updateConnectionStatus('streaming');
       this.setInputsDisabled(true);
+      if (this.voiceStatus && this.pendingUserFromVoice) {
+        if (this.voiceStatusText) this.voiceStatusText.textContent = 'Speaking reply...';
+      }
 
       const turnId = payload.turn_id || `turn_${Date.now()}`;
 
@@ -314,6 +526,8 @@
 
       this.updateConnectionStatus('connected');
       this.setInputsDisabled(false);
+      this.pendingUserFromVoice = false;
+      if (this.voiceStatus) this.voiceStatus.style.display = 'none';
       this.scrollToBottom();
       if (this.messageInput) {
         this.messageInput.focus();
@@ -388,45 +602,41 @@
       const badge = document.createElement('div');
       badge.className = 'latency-badge';
 
-      // Prepend retrieval latency if present (FEAT-008-FE)
-      if (payload.retrieval_ms != null) {
-        const retSpan = document.createElement('span');
-        retSpan.className = 'latency-metric';
-        retSpan.textContent = `Retrieval: ${Math.round(payload.retrieval_ms)}ms`;
-        badge.appendChild(retSpan);
+      const appendMetric = (label, value) => {
+        if (badge.childNodes.length > 0) {
+          const dot = document.createElement('span');
+          dot.textContent = ' • ';
+          badge.appendChild(dot);
+        }
+        const span = document.createElement('span');
+        span.className = 'latency-metric';
+        span.textContent = `${label}: ${value}`;
+        badge.appendChild(span);
+      };
 
-        const dot = document.createElement('span');
-        dot.textContent = ' • ';
-        badge.appendChild(dot);
+      if (payload.asr_ms != null) {
+        appendMetric('ASR', Math.round(payload.asr_ms) + 'ms');
+      }
+      if (payload.retrieval_ms != null) {
+        appendMetric('Retrieval', Math.round(payload.retrieval_ms) + 'ms');
+      }
+      if (payload.tool_ms != null) {
+        appendMetric('Tools', Math.round(payload.tool_ms) + 'ms');
+      }
+      if (payload.tts_first_audio_ms != null) {
+        appendMetric('TTS1st', Math.round(payload.tts_first_audio_ms) + 'ms');
+      }
+      if (payload.end_of_speech_to_first_audio_ms != null) {
+        appendMetric('EoS→Audio', Math.round(payload.end_of_speech_to_first_audio_ms) + 'ms');
       }
 
       const ttft = payload.ttft_ms ? Math.round(payload.ttft_ms) : 0;
       const tokPerSec = payload.tokens_per_second != null ? Number(payload.tokens_per_second).toFixed(1) : '0';
       const totalTokens = payload.total_tokens || 0;
 
-      const ttftSpan = document.createElement('span');
-      ttftSpan.className = 'latency-metric';
-      ttftSpan.textContent = `TTFT: ${ttft}ms`;
-
-      const dot1 = document.createElement('span');
-      dot1.textContent = ' • ';
-
-      const tpsSpan = document.createElement('span');
-      tpsSpan.className = 'latency-metric';
-      tpsSpan.textContent = `${tokPerSec} tok/s`;
-
-      const dot2 = document.createElement('span');
-      dot2.textContent = ' • ';
-
-      const tokSpan = document.createElement('span');
-      tokSpan.className = 'latency-metric';
-      tokSpan.textContent = `${totalTokens} tokens`;
-
-      badge.appendChild(ttftSpan);
-      badge.appendChild(dot1);
-      badge.appendChild(tpsSpan);
-      badge.appendChild(dot2);
-      badge.appendChild(tokSpan);
+      appendMetric('TTFT', ttft + 'ms');
+      appendMetric('Throughput', tokPerSec + ' tok/s');
+      appendMetric('Tokens', String(totalTokens));
 
       bubbleEl.appendChild(badge);
     }
@@ -488,17 +698,16 @@
     }
 
     handleResetSession() {
-      // Clear DOM messages
+      if (this.isRecording) {
+        this.stopRecording(false);
+      }
+      this.ttsQueue = [];
       this.clearMessagesDOM();
-
-      // Reset local session ID
       this.clearSessionId();
-
-      // Emit reset_session frame to server if connected
       this.sendEnvelope('reset_session', {});
-
       this.updateConnectionStatus(this.socket && this.socket.readyState === WebSocket.OPEN ? 'connected' : 'disconnected');
       this.setInputsDisabled(false);
+      if (this.voiceStatus) this.voiceStatus.style.display = 'none';
       if (this.messageInput) {
         this.messageInput.value = '';
         this.messageInput.focus();
@@ -554,8 +763,11 @@
         this.connectWebSocket();
       }
 
-      // 4. Send envelope
-      const sent = this.sendEnvelope('user_message', { text: text });
+      // 4. Send envelope (enable_tts false for typed turns — optional)
+      const sent = this.sendEnvelope('user_message', {
+        text: text,
+        enable_tts: false,
+      });
       if (!sent) {
         this.handleError({
           code: 'SEND_FAILED',
@@ -600,6 +812,7 @@
     setInputsDisabled(disabled) {
       if (this.sendBtn) this.sendBtn.disabled = disabled;
       if (this.messageInput) this.messageInput.disabled = disabled;
+      if (this.micBtn && !this.isRecording) this.micBtn.disabled = disabled;
       if (this.chipsContainer) {
         const chips = this.chipsContainer.querySelectorAll('.chip');
         for (const chip of chips) {
@@ -644,6 +857,13 @@
           if (this.messageInput) {
             this.sendMessage(this.messageInput.value);
           }
+        });
+      }
+
+      if (this.micBtn) {
+        this.micBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.toggleRecording();
         });
       }
 

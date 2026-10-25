@@ -145,6 +145,9 @@ class InboundMessageType(str, Enum):
     USER_MESSAGE = "user_message"
     RESET_SESSION = "reset_session"
     PING = "ping"
+    # Assignment 3 — additive voice events (text contract unchanged)
+    AUDIO_CHUNK = "audio_chunk"
+    AUDIO_END = "audio_end"
 
 class UserMessagePayload(BaseModel):
     model_config = ConfigDict(frozen=True)
@@ -168,6 +171,13 @@ class OutboundMessageType(str, Enum):
     STREAM_END = "stream_end"
     ERROR = "error"
     PONG = "pong"
+    # Assignment 3 — additive
+    ASR_PARTIAL = "asr_partial"
+    ASR_FINAL = "asr_final"
+    TTS_AUDIO_CHUNK = "tts_audio_chunk"
+    TTS_END = "tts_end"
+    TOOL_CALL = "tool_call"
+    TOOL_RESULT = "tool_result"
 
 class TokenPayload(BaseModel):
     model_config = ConfigDict(frozen=True)

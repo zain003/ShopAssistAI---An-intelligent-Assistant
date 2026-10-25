@@ -186,6 +186,69 @@ class LLMEngine:
                 recoverable=True,
             ) from exc
 
+    async def generate_complete(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.1,
+        max_tokens: int = 256,
+    ) -> str:
+        """Non-streaming completion used for tool-call probe rounds.
+
+        Args:
+            messages: Chat messages with role/content.
+            temperature: Sampling temperature.
+            max_tokens: Maximum tokens to generate.
+
+        Returns:
+            Assistant text content (may be empty).
+
+        Raises:
+            LLMEngineError: On connection/inference failure.
+        """
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "stream": False,
+            "options": {
+                "temperature": temperature,
+                "num_predict": max_tokens,
+            },
+        }
+        try:
+            response = await self._client.post(
+                f"{self.host}/api/chat",
+                json=payload,
+                timeout=self.timeout,
+            )
+            if response.status_code >= 400:
+                raise LLMEngineError(
+                    message=(
+                        f"Ollama inference failed with status "
+                        f"{response.status_code}: {response.text}"
+                    ),
+                    code="INFERENCE_FAILED",
+                    recoverable=True,
+                )
+            data = response.json()
+            message_obj = data.get("message") if isinstance(data, dict) else None
+            if isinstance(message_obj, dict):
+                return str(message_obj.get("content", "") or "")
+            return str(data.get("response", "") or "") if isinstance(data, dict) else ""
+        except LLMEngineError:
+            raise
+        except (httpx.ConnectError, httpx.ConnectTimeout, httpx.NetworkError) as exc:
+            raise LLMEngineError(
+                message=f"Ollama host unreachable at {self.host}: {exc}",
+                code="SERVICE_UNAVAILABLE",
+                recoverable=True,
+            ) from exc
+        except httpx.TimeoutException as exc:
+            raise LLMEngineError(
+                message=f"Ollama inference timed out: {exc}",
+                code="INFERENCE_TIMEOUT",
+                recoverable=True,
+            ) from exc
+
     async def generate_stream(
         self,
         messages: List[Dict[str, str]],

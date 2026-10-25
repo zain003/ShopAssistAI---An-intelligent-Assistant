@@ -60,6 +60,23 @@ class MockLLMEngine(LLMEngine):
         """Simulates resource closure."""
         self.closed = True
 
+    async def generate_complete(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.1,
+        max_tokens: int = 256,
+    ) -> str:
+        """Non-streaming probe used by the tool orchestrator (no tool call)."""
+        if self.should_fail:
+            raise LLMEngineError(
+                message="Mock inference failure occurred",
+                code=self.fail_code,
+                recoverable=True,
+            )
+        # Empty probe → no tool call and no direct_answer; fall through to generate_stream
+        # so existing token-by-token WebSocket tests remain valid.
+        return ""
+
     async def generate_stream(
         self,
         messages: List[Dict[str, str]],

@@ -197,6 +197,7 @@ class ConversationManager:
         self,
         session_id: str,
         max_history_turns: int = 6,
+        tools_xml: Optional[str] = None,
     ) -> List[Dict[str, str]]:
         """Constructs the LLM input payload with system prompt and sliding history.
 
@@ -208,6 +209,7 @@ class ConversationManager:
         Args:
             session_id: Session identifier string.
             max_history_turns: Max turns (user+assistant pairs) to include in history.
+            tools_xml: Optional tool schemas block for Assignment 3 function calling.
 
         Returns:
             List[Dict[str, str]]: List of {'role': str, 'content': str} dictionaries.
@@ -215,7 +217,10 @@ class ConversationManager:
         session = self.get_or_create_session(session_id)
 
         with self._lock:
-            system_prompt = render_system_prompt(active_order_id=session.active_order_id)
+            system_prompt = render_system_prompt(
+                active_order_id=session.active_order_id,
+                tools_xml=tools_xml,
+            )
             pruned_messages = prune_messages(session.messages, max_turns=max_history_turns)
 
             payload: List[Dict[str, str]] = [
@@ -242,6 +247,7 @@ class RAGConversationManager:
         user_query: str,
         max_context_tokens: int = 500,
         max_history_turns: int = 6,
+        tools_xml: Optional[str] = None,
     ) -> Tuple[List[Dict[str, str]], RetrievalResult]:
         """Retrieves domain context, formats prompt, and returns chat payload + retrieval result.
         
@@ -250,6 +256,7 @@ class RAGConversationManager:
             user_query: Current turn customer question.
             max_context_tokens: Token ceiling for retrieved document chunks (default: 500).
             max_history_turns: Maximum conversation turns to retain in sliding window.
+            tools_xml: Optional tool schemas block for Assignment 3 function calling.
             
         Returns:
             Tuple of (chat_payload, retrieval_result).
@@ -271,6 +278,7 @@ class RAGConversationManager:
             system_prompt = render_system_prompt(
                 active_order_id=session.active_order_id,
                 retrieved_context_xml=context_xml,
+                tools_xml=tools_xml,
             )
             pruned_messages = prune_messages(session.messages, max_turns=max_history_turns)
 

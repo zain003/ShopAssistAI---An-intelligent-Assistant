@@ -100,6 +100,9 @@ class InboundMessageType(str, Enum):
     USER_MESSAGE = "user_message"
     RESET_SESSION = "reset_session"
     PING = "ping"
+    # Assignment 3 — voice (additive; text contract unchanged)
+    AUDIO_CHUNK = "audio_chunk"
+    AUDIO_END = "audio_end"
 
 
 class UserMessagePayload(BaseModel):
@@ -127,6 +130,13 @@ class OutboundMessageType(str, Enum):
     STREAM_END = "stream_end"
     ERROR = "error"
     PONG = "pong"
+    # Assignment 3 — voice + tools (additive)
+    ASR_PARTIAL = "asr_partial"
+    ASR_FINAL = "asr_final"
+    TTS_AUDIO_CHUNK = "tts_audio_chunk"
+    TTS_END = "tts_end"
+    TOOL_CALL = "tool_call"
+    TOOL_RESULT = "tool_result"
 
 
 class TokenPayload(BaseModel):
@@ -159,6 +169,12 @@ class StreamEndPayload(BaseModel):
     tokens_per_second: float
     retrieval_ms: Optional[float] = None  # Retrieval latency in milliseconds (RAG)
     citations: List[CitationItem] = Field(default_factory=list)  # Grounded citations
+    is_fallback: Optional[bool] = None
+    # Assignment 3 voice / tools telemetry
+    asr_ms: Optional[float] = None
+    tool_ms: Optional[float] = None
+    tts_first_audio_ms: Optional[float] = None
+    end_of_speech_to_first_audio_ms: Optional[float] = None
 
 
 class ErrorPayload(BaseModel):
